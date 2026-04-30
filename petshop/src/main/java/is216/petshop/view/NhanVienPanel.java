@@ -48,6 +48,7 @@ public class NhanVienPanel extends JPanel {
         btnAdd.setFocusPainted(false);
         btnAdd.setFont(new Font("Arial", Font.BOLD, 14));
         btnAdd.setPreferredSize(new Dimension(160, 40));
+        btnAdd.putClientProperty("FlatLaf.style", "arc: 15");
         
         headerPanel.add(titlePanel, BorderLayout.WEST);
         headerPanel.add(btnAdd, BorderLayout.EAST);
