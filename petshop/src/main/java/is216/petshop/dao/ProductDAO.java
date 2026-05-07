@@ -26,10 +26,10 @@ public class ProductDAO {
                         rs.getInt("id"),
                         rs.getString("name"),
                         rs.getString("type"),
-                        rs.getDouble("price")
+                        rs.getDouble("price"),
+                        rs.getInt("stock")
                 ));
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }
