@@ -273,3 +273,195 @@ END //
 DELIMITER ;
 
 COMMIT;
+
+
+INSERT INTO `SAN_PHAM` (
+    `TENSANPHAM`, 
+    `DONVITINH`, 
+    `GIANIEMYET`, 
+    `THUE`, 
+    `MAVACH`, 
+    `COTHEMUA`, 
+    `COTHEBAN`, 
+    `POS`, 
+    `THUONGHIEU`, 
+    `XUATXU`, 
+    `PHUHOP`, 
+    `THANHPHAN`, 
+    `HUONGDAN`, 
+    `MOTA`
+) VALUES 
+(
+    -- 1. Thức ăn cho chó con
+    'Thức ăn hạt SmartHeart Gold Puppy',
+    'Bao 1kg',
+    165000,
+    0.1,
+    '8851234560012',
+    TRUE, TRUE, TRUE,
+    'SmartHeart',
+    'Thái Lan',
+    'Chó con dưới 1 năm tuổi',
+    'Gạo, bột gia cầm, mỡ gà, bột củ cải đường, dầu cá, prebiotic (Galacto-oligosaccharide).',
+    'Chia đều thành 3-4 bữa/ngày dựa theo cân nặng của cún. Cung cấp đủ nước.',
+    'Hỗ trợ phát triển não bộ, tăng cường hệ miễn dịch và giúp hệ tiêu hóa của cún con khỏe mạnh.'
+),
+(
+    -- 2. Súp thưởng cho mèo
+    'Súp thưởng cho mèo Ciao Churu vị cá ngừ',
+    'Gói 4 thanh',
+    45000,
+    0.1,
+    '4901133718229',
+    TRUE, TRUE, TRUE,
+    'Inaba Ciao',
+    'Nhật Bản',
+    'Mọi giống mèo ở mọi độ tuổi',
+    'Cá ngừ, chiết xuất cá ngừ, vitamin E, chiết xuất trà xanh, chất làm đặc.',
+    'Cho ăn trực tiếp như món ăn vặt hoặc trộn chung với hạt để kích thích mèo ăn ngon miệng hơn.',
+    'Súp thưởng dạng sệt thơm ngon, giàu độ ẩm, hỗ trợ hạn chế các bệnh về đường tiết niệu ở mèo.'
+),
+(
+    -- 3. Cát vệ sinh cho mèo
+    'Cát vệ sinh cho mèo Nhật Bản Đen hương Cà phê',
+    'Túi 5L',
+    60000,
+    0.1,
+    '8938521140023',
+    TRUE, TRUE, TRUE,
+    'Japan Litter',
+    'Việt Nam',
+    'Mèo đi vệ sinh trong khay',
+    '100% Bentonite tự nhiên và hạt lưu hương cà phê.',
+    'Đổ cát vào khay với độ dày từ 5-7cm. Dùng xẻng xúc bỏ phần cát vón cục hàng ngày.',
+    'Cát bentonite khử mùi cực tốt, vón cục nhanh, không gây bụi bẩn và an toàn cho chân mèo.'
+),
+(
+    -- 4. Đồ chơi thú cưng
+    'Đồ chơi cần câu mèo lông vũ gắn chuông',
+    'Cái',
+    25000,
+    0.1,
+    '8931597530045',
+    TRUE, TRUE, TRUE,
+    'No Brand',
+    'Trung Quốc',
+    'Mèo ở mọi lứa tuổi',
+    'Nhựa dẻo, lông vũ tự nhiên, chuông kim loại.',
+    'Cầm tay lắc nhẹ trước mặt mèo để kích thích bản năng săn mồi và cùng chơi với chúng.',
+    'Giúp mèo giải tỏa căng thẳng, tăng cường vận động tránh béo phì khi nuôi trong nhà.'
+),
+(
+    -- 5. Nệm ngủ cho chó mèo
+    'Nệm tròn bông cho thú cưng Size M',
+    'Cái',
+    180000,
+    0.1,
+    '8930012234556',
+    TRUE, TRUE, TRUE,
+    'PetStyle',
+    'Trung Quốc',
+    'Chó mèo dưới 7kg',
+    'Vải thô cao cấp, bông gòn PP đàn hồi, đế chống trượt.',
+'Đặt ở nơi khô ráo, thoáng mát trong nhà. Có thể giặt máy ở chế độ nhẹ.',
+    'Ổ đệm siêu êm ái, giữ ấm tốt, tạo không gian riêng tư và đem lại giấc ngủ sâu cho thú cưng.'
+),
+(
+    -- 6. Thực phẩm chức năng / Gel dinh dưỡng
+    'Gel dinh dưỡng tăng cân cho chó mèo Virbac Megaderm',
+    'Hộp 28 gói',
+    315000,
+    0.1,
+    '3423240015504',
+    TRUE, TRUE, TRUE,
+    'Virbac',
+    'Pháp',
+    'Chó mèo bị rụng lông, da khô hoặc sau khi ốm',
+    'Các axit béo thiết yếu Omega 3 và Omega 6 từ nguồn dầu cá và dầu cây lưu ly.',
+    'Trộn vào thức ăn hoặc cho ăn trực tiếp. 1 gói/ngày cho thú cưng dưới 10kg.',
+    'Bổ sung dưỡng chất tối ưu giúp cải thiện độ mượt của lông, giảm ngứa và hỗ trợ điều trị viêm da.'
+),
+(
+    -- 7. Dịch vụ lưu trú (Pet Hotel)
+    'Dịch vụ Khách sạn thú cưng - Phòng Deluxe',
+    'Ngày',
+    200000,
+    0.1,
+    'HOTELDX01',
+    FALSE, TRUE, TRUE, -- COTHEMUA = FALSE vì là dịch vụ tự có
+    'PetStore Hotel',
+    'Việt Nam',
+    'Chó hoặc mèo dưới 10kg',
+    'Không áp dụng (Dịch vụ lưu trú)',
+    'Nhận và trả thú cưng từ 8h00 đến 20h00 hàng ngày. Yêu cầu thú cưng đã tiêm ngừa đầy đủ.',
+    'Phòng lưu trú riêng biệt có điều hòa 24/7, camera giám sát cho chủ nuôi và chế độ ăn ngày 2 bữa.'
+),
+(
+    -- 8. Dịch vụ đưa đón tận nơi
+    'Dịch vụ đưa đón thú cưng nội thành dưới 5km',
+    'Lượt',
+    80000,
+    0.1,
+    'DELIVER05',
+    FALSE, TRUE, TRUE, -- COTHEMUA = FALSE vì là dịch vụ tự có
+    'PetStore Express',
+    'Việt Nam',
+    'Tất cả các loại thú cưng',
+    'Không áp dụng (Dịch vụ vận chuyển)',
+    'Khách hàng đặt lịch trước tối thiểu 1 tiếng để tài xế chuẩn bị lồng vận chuyển chuyên dụng.',
+    'Dịch vụ đưa đón an toàn bằng ô tô/xe máy chuyên dụng, đảm bảo thú cưng không bị hoảng sợ.'
+),
+(
+    -- 9. Vật tư tiêu hao nội bộ (Test logic hệ thống)
+    'Găng tay y tế dùng trong Spa & Khám bệnh',
+    'Hộp 100 cái',
+    95000,
+    0.1,
+    '8936001122334',
+    TRUE, 
+    FALSE, -- COTHEBAN = FALSE (Không bán ra ngoài)
+    FALSE, -- POS = FALSE (Thu ngân không quét mã bán lẻ cái này)
+    'Vglove',
+    'Việt Nam',
+    'Nhân viên Spa và kỹ thuật viên',
+    'Cao su tự nhiên Nitrile không bột.',
+    'Sử dụng 1 lần khi tắm rửa, cắt tỉa hoặc xử lý vệ sinh cho thú cưng nhiễm bệnh.',
+    'Vật tư tiêu hao dùng nội bộ trong chuỗi cửa hàng, phục vụ công tác vệ sinh và chăm sóc.'
+),
+(
+    -- 10. Thú cưng (Hàng hóa sống)
+    'Chó Phốc Sóc (Pomeranian) thuần chủng 2 tháng tuổi',
+    'Con',
+    8500000,
+0.0, -- Thuế 0% đối với con giống vật nuôi theo quy định
+    'PETPOM2M',
+    TRUE, TRUE, TRUE,
+    'PetStore Kennel',
+    'Việt Nam',
+    'Khách hàng tìm kiếm thú cưng',
+    'Động vật sống (Đã tiêm 1 mũi vắc xin và tẩy giun)',
+    'Nuôi ở nơi ấm áp, cho ăn cháo hoặc hạt ngâm mềm. Tránh tắm trong 1 tuần đầu sau khi đón.',
+    'Bé Phốc sóc màu trắng siêu thuần chủng, năng động, quấn người, có sổ sức khỏe kèm theo.'
+);
+
+-- Kiểm tra lại toàn bộ danh mục sản phẩm sau khi chèn thêm
+SELECT* from `SAN_PHAM`;
+UPDATE `SAN_PHAM`
+SET `SL` = 10
+WHERE `MASANPHAM` >3;
+
+ALTER TABLE `NHAN_VIEN` MODIFY COLUMN `TRANGTHAI` BOOLEAN;
+
+ALTER TABLE `NHAN_VIEN` DROP COLUMN `TAIKHOAN` nvarchar(255);
+ALTER TABLE `NHAN_VIEN` DROP COLUMN `MATKHAU` nvarchar(255);
+INSERT INTO `CUA_HANG` (`TENCUAHANG`,`TRANGTHAI`) VALUES ('Cửa hàng chính',true)
+select * from `NHAN_VIEN`
+INSERT INTO `NHAN_VIEN` (`MACUAHANG`,`HOTEN`,`SDT`,`EMAIL`,`NGAYVAOLAM`,`TRANGTHAI`) VALUES
+(1,'Nguyen Van An',0912345678,'an@gmail.com','2026-12-12',true)
+INSERT INTO `NHAN_VIEN` (`MACUAHANG`,`HOTEN`,`SDT`,`EMAIL`,`NGAYVAOLAM`,`TRANGTHAI`) VALUES
+
+SELECT * FROM `TAI_KHOAN_NHAN_VIEN`
+alter table `TAI_KHOAN_NHAN_VIEN` DROP COLUMN `PASSWORDHASH`
+alter table `TAI_KHOAN_NHAN_VIEN` DROP COLUMN `PASSWORDHASHHISTORY`
+alter table `TAI_KHOAN_NHAN_VIEN` ADD COLUMN `PASSWORD` nvarchar(255)
+INSERT INTO `TAI_KHOAN_NHAN_VIEN` (`MANHANVIEN`,`USERNAME`,`PASSWORD`) VALUES (1,'admin','123');

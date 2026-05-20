@@ -1,42 +1,42 @@
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
+
 package is216.petshop;
 
-import is216.petshop.view.NhanVienPanel;
-import com.formdev.flatlaf.FlatLightLaf; // Import thư viện FlatLaf
-import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
+import is216.petshop.Login.LoginForm;
+import is216.petshop.Login.LoginController;
+import is216.petshop.dao.UserDAO;
+import javax.swing.*;
+import com.formdev.flatlaf.FlatLightLaf;
+
 /**
  *
- * @author Trần Minh Quyền
+ * @author Admin
  */
 public class Main {
+
     public static void main(String[] args) {
-        
-        // 1. CÀI ĐẶT GIAO DIỆN FLATLAF (Phải gọi đoạn này ĐẦU TIÊN)
+        // 1. CÀI ĐẶT GIAO DIỆN FLATLAF
         try {
-            UIManager.setLookAndFeel(new FlatLightLaf()); // Kích hoạt giao diện sáng, phẳng, hiện đại
+            UIManager.setLookAndFeel(new FlatLightLaf());
         } catch (Exception ex) {
             System.err.println("Không thể khởi tạo giao diện FlatLaf");
         }
 
-        // 2. Chạy giao diện như bình thường
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                JFrame frame = new JFrame("Hệ thống quản lý cửa hàng thú cưng");
-                frame.setSize(1200, 800);
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.setLocationRelativeTo(null);
-                
-                NhanVienPanel nhanVienPanel = new NhanVienPanel();
-                frame.add(nhanVienPanel);
-                
-                frame.setVisible(true);
-            }
+        // 2. Chạy giao diện
+        SwingUtilities.invokeLater(() -> {
+            // Khởi tạo Model (DAO)
+            UserDAO modelDAO = new UserDAO();
+
+            // Khởi tạo View (Giao diện đẹp)
+            LoginForm loginView = new LoginForm();
+
+            // Khởi tạo Controller (Kết nối View + Model)
+            new LoginController(loginView, modelDAO);
+
+            // Hiển thị
+            loginView.setVisible(true);
         });
     }
 }
