@@ -8,8 +8,7 @@ import java.sql.ResultSet;
 public class UserDAO {
 
     public boolean checkLogin(String username, String password) {
-        // Tên bảng và tên cột phải khớp tuyệt đối với file SQL của bạn
-        String sql = "SELECT * FROM TAI_KHOAN_NHAN_VIEN WHERE USERNAME=? AND PASSWORDHASD=?";
+        String sql = "SELECT * FROM TAI_KHOAN_NHAN_VIEN WHERE USERNAME=? AND PASSWORD=?";
         
         try (Connection conn = DBConnection.getConnection()) {
             if (conn == null) return false;

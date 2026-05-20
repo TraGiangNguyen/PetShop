@@ -12,6 +12,8 @@ import is216.petshop.Sales.SalesController;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.awt.geom.*;
 
 public class MainFrame extends JFrame {
     private JPanel pnlSidebar;
@@ -43,27 +45,27 @@ public class MainFrame extends JFrame {
         // ==========================================
         pnlSidebar = new JPanel();
         pnlSidebar.setBackground(new Color(60, 45, 130)); // Màu tím giống trong thiết kế
-        pnlSidebar.setPreferredSize(new Dimension(220, 0));
+        pnlSidebar.setPreferredSize(new Dimension(240, 0));
         pnlSidebar.setLayout(new BorderLayout());
 
         // --- Phần trên của Sidebar (Logo và các nút menu) ---
         JPanel pnlMenu = new JPanel();
         pnlMenu.setOpaque(false); // Làm trong suốt để lộ nền tím
         pnlMenu.setLayout(new BoxLayout(pnlMenu, BoxLayout.Y_AXIS));
-        pnlMenu.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        pnlMenu.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
 
         // Tiêu đề/Logo
-        JLabel lblLogo = new JLabel("<html><b style='font-size:18px'>🐾 Pet Store</b><br>Quản lý cửa hàng</html>");
+        JLabel lblLogo = new JLabel("<html><b style='font-family:\"Segoe UI Emoji\"; font-size:18px'>\uD83D\uDC3E Pet Store</b><br>Quản lý cửa hàng</html>");
         lblLogo.setForeground(Color.WHITE);
         lblLogo.setBorder(BorderFactory.createEmptyBorder(0, 0, 40, 0));
         pnlMenu.add(lblLogo);
 
-        // Khởi tạo các nút Menu bằng hàm hỗ trợ
-        btnSales = createMenuButton("🛒 Bán hàng");
-        btnCustomer = createMenuButton("👤 Khách hàng");
-        btnProduct = createMenuButton("📦 Sản phẩm");
-        btnInvoice = createMenuButton("📄 Hóa đơn");
-        btnEmployee = createMenuButton("👥 Nhân viên");
+        // Khởi tạo các nút Menu với icon vẽ bằng Graphics2D
+        btnSales = createMenuButton("B\u00e1n h\u00e0ng", "cart");
+        btnCustomer = createMenuButton("Kh\u00e1ch h\u00e0ng", "person");
+        btnProduct = createMenuButton("S\u1ea3n ph\u1ea9m", "box");
+        btnInvoice = createMenuButton("H\u00f3a \u0111\u01a1n", "document");
+        btnEmployee = createMenuButton("Nh\u00e2n vi\u00ean", "people");
 
         // Yêu cầu các nút lắng nghe sự kiện click chuột
         btnProduct.addActionListener(e -> btnProductActionPerformed());
@@ -96,7 +98,7 @@ public class MainFrame extends JFrame {
         pnlBottom.add(lblUser);
         pnlBottom.add(Box.createRigidArea(new Dimension(0, 15)));
 
-        btnLogout = createMenuButton("🚪 Đăng xuất");
+        btnLogout = createMenuButton("\u0110\u0103ng xu\u1ea5t", "logout");
         btnLogout.addActionListener(e -> {
             LoginForm loginView = new LoginForm();
             new LoginController(loginView, new UserDAO());
@@ -121,28 +123,79 @@ public class MainFrame extends JFrame {
         add(pnlContent, BorderLayout.CENTER);
     }
 
-    private JButton createMenuButton(String text) {
+    private JButton createMenuButton(String text, String iconType) {
         JButton btn = new JButton(text);
+        btn.setIcon(createMenuIcon(iconType));
+        btn.setIconTextGap(10);
         btn.setForeground(Color.WHITE);
-        btn.setBackground(new Color(60, 45, 130)); // Trùng màu nền để tệp vào Sidebar
+        btn.setBackground(new Color(60, 45, 130));
         btn.setFont(new Font("Segoe UI", Font.PLAIN, 15));
-        btn.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
+        btn.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         btn.setFocusPainted(false);
         btn.setHorizontalAlignment(SwingConstants.LEFT);
-        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45)); // Chiều rộng kéo hết cỡ
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         
         // Hiệu ứng Hover đơn giản
         btn.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
-                btn.setBackground(new Color(80, 60, 160)); // Sáng lên khi di chuột vào
+                btn.setBackground(new Color(80, 60, 160));
             }
             public void mouseExited(java.awt.event.MouseEvent evt) {
-                btn.setBackground(new Color(60, 45, 130)); // Trở về màu cũ
+                btn.setBackground(new Color(60, 45, 130));
             }
         });
         
         return btn;
+    }
+
+    // Vẽ icon 18x18 bằng Graphics2D cho từng loại nút menu
+    private ImageIcon createMenuIcon(String type) {
+        int s = 18; // Kích thước icon
+        BufferedImage img = new BufferedImage(s, s, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = img.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setColor(Color.WHITE);
+        g.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+
+        switch (type) {
+            case "cart": // Giỏ hàng
+                g.drawRect(4, 3, 10, 8);
+                g.drawLine(4, 3, 2, 0);
+                g.fillOval(5, 13, 4, 4);
+                g.fillOval(11, 13, 4, 4);
+                break;
+            case "person": // Người
+                g.fillOval(6, 1, 6, 6);
+                g.drawArc(2, 9, 14, 10, 0, 180);
+                break;
+            case "box": // Hộp/Gói hàng
+                g.drawRect(2, 4, 14, 12);
+                g.drawLine(2, 4, 9, 0);
+                g.drawLine(16, 4, 9, 0);
+                g.drawLine(9, 4, 9, 16);
+                break;
+            case "document": // Tài liệu
+                g.drawRect(3, 1, 12, 15);
+                g.drawLine(6, 5, 12, 5);
+                g.drawLine(6, 8, 12, 8);
+                g.drawLine(6, 11, 10, 11);
+                break;
+            case "people": // Nhóm người
+                g.fillOval(3, 2, 5, 5);
+                g.drawArc(0, 8, 11, 8, 0, 180);
+                g.fillOval(10, 2, 5, 5);
+                g.drawArc(7, 8, 11, 8, 0, 180);
+                break;
+            case "logout": // Mũi tên thoát
+                g.drawRect(2, 2, 8, 14);
+                g.drawLine(10, 9, 17, 9);
+                g.drawLine(14, 5, 17, 9);
+                g.drawLine(14, 13, 17, 9);
+                break;
+        }
+        g.dispose();
+        return new ImageIcon(img);
     }
 
     public void showPanel(JPanel panel) {
