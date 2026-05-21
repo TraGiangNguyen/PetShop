@@ -173,49 +173,29 @@ public class LoginForm extends JFrame {
         txtPassword.addActionListener(listener);
     }
 
-    // ── Giữ nguyên hàm vẽ icon chó của bạn ──
+    // T\u1ea3i logo t\u1eeb file \u1ea3nh trong resources
     private ImageIcon createDogIcon(int size) {
-        BufferedImageBuilder bib = new BufferedImageBuilder(size);
-        return new ImageIcon(bib.build());
-    }
-
-    static class BufferedImageBuilder {
-        private final int sz;
-        BufferedImageBuilder(int sz) { this.sz = sz; }
-
-        BufferedImage build() {
-            BufferedImage img = new BufferedImage(sz, sz, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g = img.createGraphics();
-            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-            g.setColor(new Color(91, 91, 214));
-            g.fillOval(0, 0, sz, sz);
-
-            int cx = sz / 2;
-            int cy = sz / 2 + 2;
-            g.setColor(Color.WHITE);
-
-            int earW = sz / 5, earH = sz / 4;
-            g.fillRoundRect(cx - earW * 2 + 2, cy - earH + 1, earW, earH, earW / 2, earH / 2);
-            g.fillRoundRect(cx + earW - 2,     cy - earH + 1, earW, earH, earW / 2, earH / 2);
-
-            int headR = (int)(sz * 0.32);
-            g.fillOval(cx - headR, cy - headR + 2, headR * 2, headR * 2);
-
-            g.setColor(new Color(91, 91, 214));
-            int eyeR = sz / 14;
-            g.fillOval(cx - headR / 2 - eyeR / 2, cy - eyeR * 2,     eyeR * 2, eyeR * 2);
-            g.fillOval(cx + headR / 2 - eyeR / 2, cy - eyeR * 2,     eyeR * 2, eyeR * 2);
-
-            int noseR = sz / 14;
-            g.fillOval(cx - noseR, cy + 2, noseR * 2, noseR);
-
-            g.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-            int smileW = headR / 2;
-            g.drawArc(cx - smileW, cy + noseR + 2, smileW * 2, smileW, 200, 140);
-
-            g.dispose();
-            return img;
+        try {
+            java.net.URL imgURL = getClass().getClassLoader().getResource("images/dog_logo.png");
+            if (imgURL != null) {
+                ImageIcon original = new ImageIcon(imgURL);
+                Image scaled = original.getImage().getScaledInstance(size, size, Image.SCALE_SMOOTH);
+                return new ImageIcon(scaled);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+        // Fallback: v\u1ebd icon \u0111\u01a1n gi\u1ea3n n\u1ebfu kh\u00f4ng t\u00ecm th\u1ea5y \u1ea3nh
+        BufferedImage img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = img.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setColor(new Color(91, 91, 214));
+        g.fillOval(0, 0, size, size);
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Segoe UI", Font.BOLD, size / 2));
+        FontMetrics fm = g.getFontMetrics();
+        g.drawString("P", (size - fm.stringWidth("P")) / 2, (size + fm.getAscent() - fm.getDescent()) / 2);
+        g.dispose();
+        return new ImageIcon(img);
     }
-}
+}

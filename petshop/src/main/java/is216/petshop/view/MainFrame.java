@@ -54,11 +54,32 @@ public class MainFrame extends JFrame {
         pnlMenu.setLayout(new BoxLayout(pnlMenu, BoxLayout.Y_AXIS));
         pnlMenu.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
 
-        // Tiêu đề/Logo
-        JLabel lblLogo = new JLabel("<html><b style='font-family:\"Segoe UI Emoji\"; font-size:18px'>\uD83D\uDC3E Pet Store</b><br>Quản lý cửa hàng</html>");
-        lblLogo.setForeground(Color.WHITE);
-        lblLogo.setBorder(BorderFactory.createEmptyBorder(0, 0, 40, 0));
-        pnlMenu.add(lblLogo);
+        // Logo từ ảnh
+        JLabel lblLogoImg = new JLabel();
+        lblLogoImg.setAlignmentX(Component.CENTER_ALIGNMENT);
+        try {
+            java.net.URL logoURL = getClass().getClassLoader().getResource("images/dog_logo.png");
+            if (logoURL != null) {
+                ImageIcon logoIcon = new ImageIcon(logoURL);
+                Image scaled = logoIcon.getImage().getScaledInstance(64, 64, Image.SCALE_SMOOTH);
+                lblLogoImg.setIcon(new ImageIcon(scaled));
+            }
+        } catch (Exception ex) { /* ignore */ }
+        pnlMenu.add(lblLogoImg);
+        pnlMenu.add(Box.createRigidArea(new Dimension(0, 8)));
+
+        JLabel lblTitle = new JLabel("Pet Store");
+        lblTitle.setForeground(Color.WHITE);
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        lblTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+        pnlMenu.add(lblTitle);
+
+        JLabel lblSub = new JLabel("Quản lý cửa hàng");
+        lblSub.setForeground(new Color(180, 170, 220));
+        lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblSub.setAlignmentX(Component.CENTER_ALIGNMENT);
+        lblSub.setBorder(BorderFactory.createEmptyBorder(0, 0, 30, 0));
+        pnlMenu.add(lblSub);
 
         // Khởi tạo các nút Menu với icon vẽ bằng Graphics2D
         btnSales = createMenuButton("B\u00e1n h\u00e0ng", "cart");
@@ -93,9 +114,30 @@ public class MainFrame extends JFrame {
         pnlBottom.setLayout(new BoxLayout(pnlBottom, BoxLayout.Y_AXIS));
         pnlBottom.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        JLabel lblUser = new JLabel("<html><span style='font-size:10px'>Xin chào,</span><br><b style='font-size:14px'>admin</b></html>");
+        // Avatar admin từ ảnh logo
+        JLabel lblAvatar = new JLabel();
+        lblAvatar.setAlignmentX(Component.LEFT_ALIGNMENT);
+        try {
+            java.net.URL avatarURL = getClass().getClassLoader().getResource("images/dog_logo.png");
+            if (avatarURL != null) {
+                ImageIcon avatarIcon = new ImageIcon(avatarURL);
+                Image scaled = avatarIcon.getImage().getScaledInstance(40, 40, Image.SCALE_SMOOTH);
+                lblAvatar.setIcon(new ImageIcon(scaled));
+            }
+        } catch (Exception ex) { /* ignore */ }
+
+        JPanel pnlUserInfo = new JPanel();
+        pnlUserInfo.setOpaque(false);
+        pnlUserInfo.setLayout(new BoxLayout(pnlUserInfo, BoxLayout.X_AXIS));
+        pnlUserInfo.setAlignmentX(Component.LEFT_ALIGNMENT);
+        pnlUserInfo.add(lblAvatar);
+        pnlUserInfo.add(Box.createRigidArea(new Dimension(10, 0)));
+
+        JLabel lblUser = new JLabel("<html><span style='font-size:10px'>Xin ch\u00e0o,</span><br><b style='font-size:14px'>admin</b></html>");
         lblUser.setForeground(Color.WHITE);
-        pnlBottom.add(lblUser);
+        pnlUserInfo.add(lblUser);
+
+        pnlBottom.add(pnlUserInfo);
         pnlBottom.add(Box.createRigidArea(new Dimension(0, 15)));
 
         btnLogout = createMenuButton("\u0110\u0103ng xu\u1ea5t", "logout");
