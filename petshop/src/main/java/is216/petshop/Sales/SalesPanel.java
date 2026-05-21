@@ -95,7 +95,9 @@ public class SalesPanel extends JPanel {
         titleBlock.add(lblSub);
 
         // Right: pending-order button (amber)
-        JButton btnPending = createRoundedButton("  \uD83D\uDD50  Đơn chờ thanh toán", ACCENT, Color.WHITE, 10);
+        JButton btnPending = createRoundedButton("Đơn chờ thanh toán", ACCENT, Color.WHITE, 10);
+        btnPending.setIcon(createClockIcon(18, Color.WHITE));
+        btnPending.setIconTextGap(8);
         btnPending.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnPending.setPreferredSize(new Dimension(230, 44));
 
@@ -198,13 +200,18 @@ public class SalesPanel extends JPanel {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(PRIMARY);
                 g2.fillOval(0, 0, getWidth(), getHeight());
+                
+                // Draw cart icon
                 g2.setColor(Color.WHITE);
-                g2.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 18));
-                FontMetrics fm = g2.getFontMetrics();
-                String icon = "\uD83D\uDED2";
-                int x = (getWidth()  - fm.stringWidth(icon)) / 2;
-                int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
-                g2.drawString(icon, x, y);
+                g2.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                int cx = getWidth() / 2;
+                int cy = getHeight() / 2;
+                
+                g2.drawRect(cx - 5, cy - 4, 10, 8);
+                g2.drawLine(cx - 5, cy - 4, cx - 8, cy - 8); // handle
+                g2.fillOval(cx - 3, cy + 5, 3, 3); // wheel 1
+                g2.fillOval(cx + 3, cy + 5, 3, 3); // wheel 2
+                
                 g2.dispose();
             }
         };
@@ -932,5 +939,26 @@ public class SalesPanel extends JPanel {
             return new Insets(radius / 2, radius / 2, radius / 2, radius / 2);
         }
         @Override public boolean isBorderOpaque() { return false; }
+    }
+
+    /** Creates a custom drawn clock icon for the pending orders button */
+    private ImageIcon createClockIcon(int size, Color color) {
+        java.awt.image.BufferedImage img = new java.awt.image.BufferedImage(size, size, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = img.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setColor(color);
+        g.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        
+        // Draw outer circle
+        g.drawOval(2, 2, size - 4, size - 4);
+        
+        // Draw clock hands
+        int cx = size / 2;
+        int cy = size / 2;
+        g.drawLine(cx, cy, cx, cy - size / 4 + 1); // Minute hand
+        g.drawLine(cx, cy, cx + size / 4 - 1, cy); // Hour hand
+        
+        g.dispose();
+        return new ImageIcon(img);
     }
 }
