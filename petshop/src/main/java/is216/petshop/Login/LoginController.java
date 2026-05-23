@@ -40,14 +40,34 @@ public class LoginController {
 
             // 3. Xử lý kết quả
             if (isValid) {
+                // Kiểm tra xem nhân viên liên kết đã nghỉ việc chưa
+                is216.petshop.model.NhanVienModel nv = modelDAO.getNhanVienByUsername(username);
+                if (nv != null && (
+                    "0".equals(nv.getTrangThai()) || 
+                    "Nghỉ việc".equalsIgnoreCase(nv.getTrangThai()) ||
+                    (nv.getTrangThai() != null && nv.getTrangThai().toLowerCase().contains("nghỉ"))
+                )) {
+                    view.showMessage("Tài khoản này đã bị khóa do nhân viên đã nghỉ việc!", true);
+                    view.clearPassword();
+                    return;
+                }
+
+                String role = modelDAO.getUserRole(username);
+                boolean isManager = role != null && (
+                        role.toLowerCase().contains("quản lý") || 
+                        role.toLowerCase().contains("qu?n l") || 
+                        role.toLowerCase().contains("quan ly") ||
+                        role.toLowerCase().contains("quản")
+                );
+
                 view.showMessage("Đăng nhập thành công! Chào mừng, " + username + " 🐾", false);
                 
-            // 1. Đóng cửa sổ đăng nhập hiện tại
-            view.dispose(); 
-            
-            // 2. Mở cửa sổ Chính (MainFrame)
-            MainFrame mainFrame = new MainFrame();
-            mainFrame.setVisible(true);
+                // 1. Đóng cửa sổ đăng nhập hiện tại
+                view.dispose(); 
+                
+                // 2. Mở cửa sổ Chính (MainFrame)
+                MainFrame mainFrame = new MainFrame(username, isManager);
+                mainFrame.setVisible(true);
             } else {
                 view.showMessage("Tên đăng nhập hoặc mật khẩu không đúng!", true);
                 view.clearPassword();

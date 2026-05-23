@@ -25,7 +25,8 @@ public class ProductDAO {
                 p.setId(rs.getInt("MASANPHAM")); 
                 p.setName(rs.getString("TENSANPHAM"));
                 p.setPrice(rs.getLong("GIANIEMYET"));
-                p.setStock(rs.getInt("SL"));
+                int qty = rs.getInt("SL");
+                p.setStock(qty < 0 ? 0 : qty);
                 list.add(p);
             }
         } catch (SQLException e) {

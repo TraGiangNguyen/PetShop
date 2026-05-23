@@ -1,14 +1,16 @@
 package is216.petshop.view;
 
-import is216.petshop.view.ProductForm;
+import is216.petshop.view.StockPanel;
 import is216.petshop.view.NhanVienPanel;
-import is216.petshop.view.Customerpanel;
+import is216.petshop.Customer.Customerpanel;
 import is216.petshop.view.PlaceholderPanel;
 import is216.petshop.Login.LoginForm;
 import is216.petshop.Login.LoginController;
 import is216.petshop.dao.UserDAO;
 import is216.petshop.Sales.SalesPanel;
 import is216.petshop.Sales.SalesController;
+import is216.petshop.Booking.BookingPanel;
+import is216.petshop.Booking.BookingController;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,22 +20,30 @@ import java.awt.geom.*;
 public class MainFrame extends JFrame {
     private JPanel pnlSidebar;
     private JPanel pnlContent; // Vùng chứa nội dung chính
-
     private JButton btnSales;
     private JButton btnCustomer;
+    private JButton btnService; // Dịch vụ
     private JButton btnProduct;
     private JButton btnInvoice;
     private JButton btnEmployee;
     private JButton btnLogout;
+    private boolean isManager = true;
+    private String username;
     
     public MainFrame() {
-        initComponents(); 
+        this("admin", true);
+    }
+
+    public MainFrame(String username, boolean isManager) {
+        this.username = username;
+        this.isManager = isManager;
+        initComponents(username); 
         setLocationRelativeTo(null); 
         // Hiển thị thẻ mặc định là Bán hàng
         btnSalesActionPerformed();
     }
     
-    private void initComponents() {
+    private void initComponents(String username) {
         setTitle("Pet Store - Quản lý cửa hàng");
         setSize(1200, 700);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -60,9 +70,11 @@ public class MainFrame extends JFrame {
         pnlMenu.add(lblLogo);
 
         // Khởi tạo các nút Menu với icon vẽ bằng Graphics2D
+        // Khởi tạo các nút Menu với icon vẽ bằng Graphics2D
         btnSales = createMenuButton("B\u00e1n h\u00e0ng", "cart");
         btnCustomer = createMenuButton("Kh\u00e1ch h\u00e0ng", "person");
-        btnProduct = createMenuButton("S\u1ea3n ph\u1ea9m", "box");
+        btnService = createMenuButton("D\u1ecbch v\u1ee5", "calendar");
+        btnProduct = createMenuButton("Kho hàng", "box");
         btnInvoice = createMenuButton("H\u00f3a \u0111\u01a1n", "document");
         btnEmployee = createMenuButton("Nh\u00e2n vi\u00ean", "people");
 
@@ -70,6 +82,7 @@ public class MainFrame extends JFrame {
         btnProduct.addActionListener(e -> btnProductActionPerformed());
         btnSales.addActionListener(e -> btnSalesActionPerformed());
         btnCustomer.addActionListener(e -> btnCustomerActionPerformed());
+        btnService.addActionListener(e -> btnServiceActionPerformed());
         btnInvoice.addActionListener(e -> btnInvoiceActionPerformed());
         btnEmployee.addActionListener(e -> btnEmployeeActionPerformed());
         
@@ -78,11 +91,15 @@ public class MainFrame extends JFrame {
         pnlMenu.add(Box.createRigidArea(new Dimension(0, 10)));
         pnlMenu.add(btnCustomer);
         pnlMenu.add(Box.createRigidArea(new Dimension(0, 10)));
-        pnlMenu.add(btnProduct);
+        pnlMenu.add(btnService);
         pnlMenu.add(Box.createRigidArea(new Dimension(0, 10)));
         pnlMenu.add(btnInvoice);
-        pnlMenu.add(Box.createRigidArea(new Dimension(0, 10)));
-        pnlMenu.add(btnEmployee);
+        if (isManager) {
+            pnlMenu.add(Box.createRigidArea(new Dimension(0, 10)));
+            pnlMenu.add(btnProduct);
+            pnlMenu.add(Box.createRigidArea(new Dimension(0, 10)));
+            pnlMenu.add(btnEmployee);
+        }
 
         pnlSidebar.add(pnlMenu, BorderLayout.NORTH);
 
@@ -92,9 +109,54 @@ public class MainFrame extends JFrame {
         pnlBottom.setLayout(new BoxLayout(pnlBottom, BoxLayout.Y_AXIS));
         pnlBottom.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        JLabel lblUser = new JLabel("<html><span style='font-size:10px'>Xin chào,</span><br><b style='font-size:14px'>admin</b></html>");
-        lblUser.setForeground(Color.WHITE);
-        pnlBottom.add(lblUser);
+        // Container row for beautiful UserButton & interactive text greeting
+        JPanel pnlUserRow = new JPanel();
+        pnlUserRow.setOpaque(false);
+        pnlUserRow.setLayout(new BoxLayout(pnlUserRow, BoxLayout.X_AXIS));
+        pnlUserRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        UserButton btnUser = new UserButton(username);
+        
+        JPanel pnlUserText = new JPanel();
+        pnlUserText.setOpaque(false);
+        pnlUserText.setLayout(new BoxLayout(pnlUserText, BoxLayout.Y_AXIS));
+        pnlUserText.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        pnlUserText.setToolTipText("Xem thông tin tài khoản: " + username);
+        
+        JLabel lblGreet = new JLabel("Xin chào,");
+        lblGreet.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lblGreet.setForeground(new Color(200, 190, 240));
+        
+        JLabel lblUserNameText = new JLabel(username);
+        lblUserNameText.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblUserNameText.setForeground(Color.WHITE);
+        
+        pnlUserText.add(lblGreet);
+        pnlUserText.add(lblUserNameText);
+        
+        pnlUserRow.add(btnUser);
+        pnlUserRow.add(Box.createRigidArea(new Dimension(10, 0)));
+        pnlUserRow.add(pnlUserText);
+        
+        // Show Profile dialog on clicking button or greeting labels
+        java.awt.event.MouseAdapter showProfileAdapter = new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                UserDAO uDao = new UserDAO();
+                is216.petshop.model.NhanVienModel nv = uDao.getNhanVienByUsername(username);
+                UserProfileDialog profileDlg = new UserProfileDialog(MainFrame.this, username, nv);
+                profileDlg.setVisible(true);
+            }
+        };
+        btnUser.addActionListener(e -> {
+            UserDAO uDao = new UserDAO();
+            is216.petshop.model.NhanVienModel nv = uDao.getNhanVienByUsername(username);
+            UserProfileDialog profileDlg = new UserProfileDialog(MainFrame.this, username, nv);
+            profileDlg.setVisible(true);
+        });
+        pnlUserText.addMouseListener(showProfileAdapter);
+
+        pnlBottom.add(pnlUserRow);
         pnlBottom.add(Box.createRigidArea(new Dimension(0, 15)));
 
         btnLogout = createMenuButton("\u0110\u0103ng xu\u1ea5t", "logout");
@@ -192,6 +254,12 @@ public class MainFrame extends JFrame {
                 g.drawLine(14, 5, 17, 9);
                 g.drawLine(14, 13, 17, 9);
                 break;
+            case "calendar": // Lịch / Dịch vụ (Icon lịch quyển)
+                g.drawRect(3, 3, 12, 12);
+                g.drawLine(3, 7, 15, 7);
+                g.drawLine(6, 1, 6, 4);
+                g.drawLine(12, 1, 12, 4);
+                break;
         }
         g.dispose();
         return new ImageIcon(img);
@@ -215,7 +283,7 @@ public class MainFrame extends JFrame {
     }
     
     private void btnProductActionPerformed() {                                          
-        showPanel(new ProductForm());
+        showPanel(new StockPanel(this.username));
     }
 
     private void btnCustomerActionPerformed() {                                          
@@ -223,8 +291,12 @@ public class MainFrame extends JFrame {
     }
     
     private void btnInvoiceActionPerformed() {
-        SalesPanel salesPanel = new SalesPanel();
-        new SalesController(salesPanel);
-        showPanel(salesPanel);
+        showPanel(new InvoicePanel());
+    }
+
+    private void btnServiceActionPerformed() {
+        BookingPanel bookingPanel = new BookingPanel();
+        new BookingController(bookingPanel);
+        showPanel(bookingPanel);
     }
 }

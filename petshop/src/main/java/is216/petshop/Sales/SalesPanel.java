@@ -15,19 +15,30 @@ public class SalesPanel extends JPanel {
     private JLabel          lblTotalPrice;
     private DefaultTableModel cartModel;
     private JButton         btnCheckout;
+    private JButton         btnPending;     // pending checkout order
+    private JButton         btnViewPending; // button in header to view all pending orders
+    private JButton         btnFinishedServices; // button in header to view finished services waiting for payment
+    private Integer         currentBookingId = null; // links cart to booking ID
+    private JPanel          pnlAuxButtons;  // holds Cancel and Pending buttons
     private JPanel          pnlProducts;
     private JLabel          lblEmptyCart;   // empty-state label in cart
 
     // ── New payment / customer fields ─────────────────────────────────────────
     private JTextField      txtPhone;           // phone lookup input
     private JButton         btnFindCustomer;    // search button
+    private JButton         btnCreateCustomer;  // create new customer button
     private JLabel          lblCustomerName;    // resolved customer name
+    private JPanel          pnlCustomerRow;     // holds resolved customer name on left, use points button on right
     private JTextField      txtCashReceived;    // cash the customer hands over
     private JLabel          lblChange;          // auto-calculated change
+    private JButton         btnUsePoints;       // toggles points usage panel
+    private JPanel          pnlPointsUsage;     // points usage container
+    private JLabel          lblLoyaltyPointsAvailable; // customer available points label
+    private JTextField      txtPointsToUse;     // points user wants to spend
     private long            currentTotal = 0;   // kept in sync with updateTotalPrice()
 
     // ── Customer selection state ──────────────────────────────────────────────
-    private is216.petshop.model.Customer selectedCustomer = null;
+    private is216.petshop.Customer.Customer selectedCustomer = null;
     private ActionListener                  findCustomerListener    = null; // Controller supplies the search
     private ActionListener                  customerSelectedListener = null; // Controller notified on pick
 
@@ -94,15 +105,27 @@ public class SalesPanel extends JPanel {
         titleBlock.add(Box.createVerticalStrut(2));
         titleBlock.add(lblSub);
 
-        // Right: pending-order button (amber)
-        JButton btnPending = createRoundedButton("Đơn chờ thanh toán", ACCENT, Color.WHITE, 10);
-        btnPending.setIcon(createClockIcon(18, Color.WHITE));
-        btnPending.setIconTextGap(8);
-        btnPending.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btnPending.setPreferredSize(new Dimension(230, 44));
+        // Right: button container
+        JPanel pnlHeaderButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        pnlHeaderButtons.setOpaque(false);
+
+        btnViewPending = createRoundedButton("Đơn chờ thanh toán", ACCENT, Color.WHITE, 10);
+        btnViewPending.setIcon(createClockIcon(18, Color.WHITE));
+        btnViewPending.setIconTextGap(8);
+        btnViewPending.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btnViewPending.setPreferredSize(new Dimension(200, 44));
+
+        btnFinishedServices = createRoundedButton("Dịch vụ hoàn thành", new Color(16, 185, 129), Color.WHITE, 10);
+        btnFinishedServices.setIcon(createClockIcon(18, Color.WHITE));
+        btnFinishedServices.setIconTextGap(8);
+        btnFinishedServices.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btnFinishedServices.setPreferredSize(new Dimension(200, 44));
+
+        pnlHeaderButtons.add(btnFinishedServices);
+        pnlHeaderButtons.add(btnViewPending);
 
         header.add(titleBlock, BorderLayout.WEST);
-        header.add(btnPending,  BorderLayout.EAST);
+        header.add(pnlHeaderButtons,  BorderLayout.EAST);
         return header;
     }
 
@@ -186,7 +209,7 @@ public class SalesPanel extends JPanel {
     private JPanel buildCartPanel() {
         JPanel pnlRight = new JPanel(new BorderLayout(0, 12));
         pnlRight.setOpaque(false);
-        pnlRight.setPreferredSize(new Dimension(340, 0));
+        pnlRight.setPreferredSize(new Dimension(400, 0));
 
         JPanel card = createCard(new BorderLayout(0, 0), new EmptyBorder(18, 18, 18, 18));
 
@@ -242,6 +265,9 @@ public class SalesPanel extends JPanel {
                 BorderFactory.createLineBorder(BORDER_COLOR, 1, true),
                 new EmptyBorder(0, 10, 0, 10)));
 
+        JPanel pnlButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+        pnlButtons.setOpaque(false);
+
         btnFindCustomer = createRoundedButton("Tìm", PRIMARY, Color.WHITE, 8);
         btnFindCustomer.setFont(FONT_BOLD);
         btnFindCustomer.setPreferredSize(new Dimension(56, 40));
@@ -255,8 +281,26 @@ public class SalesPanel extends JPanel {
         });
         txtPhone.addActionListener(e -> btnFindCustomer.doClick()); // Enter key shortcut
 
-        pnlPhoneRow.add(txtPhone,       BorderLayout.CENTER);
-        pnlPhoneRow.add(btnFindCustomer, BorderLayout.EAST);
+        btnCreateCustomer = createRoundedButton("Tạo mới", new Color(5, 150, 105), Color.WHITE, 8);
+        btnCreateCustomer.setFont(FONT_BOLD);
+        btnCreateCustomer.setPreferredSize(new Dimension(84, 40));
+        btnCreateCustomer.addActionListener(e -> {
+            Frame owner = (Frame) SwingUtilities.getWindowAncestor(this);
+            is216.petshop.Customer.CustomerDAO cDao = new is216.petshop.Customer.CustomerDAO();
+            is216.petshop.Customer.CustomerDialog dlg = new is216.petshop.Customer.CustomerDialog(owner, null, cDao, () -> {
+                String phone = txtPhone.getText().trim();
+                if (!phone.isEmpty()) {
+                    btnFindCustomer.doClick();
+                }
+            });
+            dlg.setVisible(true);
+        });
+
+        pnlButtons.add(btnFindCustomer);
+        pnlButtons.add(btnCreateCustomer);
+
+        pnlPhoneRow.add(txtPhone,   BorderLayout.CENTER);
+        pnlPhoneRow.add(pnlButtons, BorderLayout.EAST);
 
         // Customer name result (hidden until a lookup succeeds)
         lblCustomerName = new JLabel();
@@ -267,17 +311,22 @@ public class SalesPanel extends JPanel {
         // ── Cart table ───────────────────────────────────────────────────────
         String[] cartCols = {"Mã SP", "Tên SP", "SL", "Thành tiền"};
         cartModel = new DefaultTableModel(cartCols, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+            @Override public boolean isCellEditable(int r, int c) { return c == 2; }
         };
         tblCart = new JTable(cartModel);
         tblCart.setFont(FONT_BODY);
-        tblCart.setRowHeight(28);
+        tblCart.setRowHeight(34);
         tblCart.setShowGrid(false);
         tblCart.setIntercellSpacing(new Dimension(0, 0));
         tblCart.getTableHeader().setFont(FONT_BOLD);
         tblCart.getTableHeader().setBackground(new Color(249, 250, 251));
         tblCart.getTableHeader().setForeground(TEXT_SUB);
         tblCart.setSelectionBackground(new Color(238, 242, 255));
+        tblCart.setSelectionForeground(PRIMARY);
+
+        // Use custom renderer and editor for quantity column
+        tblCart.getColumnModel().getColumn(2).setCellRenderer(new QuantityRenderer());
+        tblCart.getColumnModel().getColumn(2).setCellEditor(new QuantityEditor(tblCart, cartModel, this));
 
         JScrollPane scrollCart = new JScrollPane(tblCart);
         scrollCart.setBorder(BorderFactory.createLineBorder(BORDER_COLOR, 1, true));
@@ -356,18 +405,134 @@ public class SalesPanel extends JPanel {
         JSeparator sep2 = new JSeparator();
         sep2.setForeground(BORDER_COLOR);
 
-        //  Checkout button
+        //  Action buttons panel containing Hủy, Chờ, and Thanh toán
+        JPanel pnlActionButtons = new JPanel();
+        pnlActionButtons.setLayout(new BoxLayout(pnlActionButtons, BoxLayout.Y_AXIS));
+        pnlActionButtons.setOpaque(false);
+
+        // Cancel and Pending buttons in one horizontal row
+        pnlAuxButtons = new JPanel(new GridLayout(1, 2, 8, 0));
+        pnlAuxButtons.setOpaque(false);
+        pnlAuxButtons.setPreferredSize(new Dimension(0, 36));
+        pnlAuxButtons.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        pnlAuxButtons.setVisible(false); // Hidden by default when cart is empty
+
+        JButton btnCancel = createRoundedButton("HỦY", DANGER, Color.WHITE, 8);
+        btnCancel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnCancel.addActionListener(e -> {
+            if (getCartRowCount() == 0) {
+                showMessage("Giỏ hàng đang trống!", true);
+                return;
+            }
+            int option = JOptionPane.showConfirmDialog(this,
+                    "Bạn có chắc chắn muốn hủy giỏ hàng và xóa hết sản phẩm?",
+                    "Xác nhận hủy",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.QUESTION_MESSAGE);
+            if (option == JOptionPane.YES_OPTION) {
+                clearCart();
+            }
+        });
+
+        btnPending = createRoundedButton("CHỜ", ACCENT, Color.WHITE, 8);
+        btnPending.setFont(new Font("Segoe UI", Font.BOLD, 13));
+
+        pnlAuxButtons.add(btnCancel);
+        pnlAuxButtons.add(btnPending);
+
+        // Big Checkout button at the bottom
         btnCheckout = createRoundedButton("THANH TOÁN", PRIMARY, Color.WHITE, 10);
         btnCheckout.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        btnCheckout.setPreferredSize(new Dimension(0, 46));
+        btnCheckout.setPreferredSize(new Dimension(0, 44));
+        btnCheckout.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
 
-        JPanel pnlCheckout = new JPanel(new GridLayout(5, 1, 0, 6));
+        pnlActionButtons.add(pnlAuxButtons);
+        pnlActionButtons.add(Box.createVerticalStrut(6));
+        pnlActionButtons.add(btnCheckout);
+
+        // Checkout container with vertical BoxLayout for natural collapsing
+        JPanel pnlCheckout = new JPanel();
+        pnlCheckout.setLayout(new BoxLayout(pnlCheckout, BoxLayout.Y_AXIS));
         pnlCheckout.setOpaque(false);
+
         pnlCheckout.add(sep2);
+        pnlCheckout.add(Box.createVerticalStrut(6));
         pnlCheckout.add(lblTotalPrice);
+        pnlCheckout.add(Box.createVerticalStrut(6));
         pnlCheckout.add(pnlCashRow);
+        pnlCheckout.add(Box.createVerticalStrut(6));
         pnlCheckout.add(pnlChangeRow);
-        pnlCheckout.add(btnCheckout);
+        pnlCheckout.add(Box.createVerticalStrut(6));
+        pnlCheckout.add(pnlActionButtons);
+
+        // ── Points usage toggle button ────────────────────────────────────────
+        btnUsePoints = createRoundedButton("Đổi điểm", ACCENT, Color.WHITE, 6);
+        btnUsePoints.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        btnUsePoints.setPreferredSize(new Dimension(95, 26));
+        btnUsePoints.setMaximumSize(new Dimension(95, 26));
+        btnUsePoints.setVisible(false);
+        btnUsePoints.addActionListener(e -> {
+            pnlPointsUsage.setVisible(!pnlPointsUsage.isVisible());
+            if (!pnlPointsUsage.isVisible()) {
+                txtPointsToUse.setText("0");
+            }
+            updateTotalPrice();
+            revalidate();
+            repaint();
+        });
+
+        // ── Customer Row Panel (Name on Left, Đổi điểm Button on Right) ───────
+        pnlCustomerRow = new JPanel(new BorderLayout(8, 0));
+        pnlCustomerRow.setOpaque(false);
+        pnlCustomerRow.setVisible(false);
+        
+        // Expose name tag with green-600 theme
+        lblCustomerName.setFont(FONT_BOLD);
+        lblCustomerName.setForeground(new Color(5, 150, 105));
+        lblCustomerName.setVisible(true); // Always visible inside the row parent pnlCustomerRow
+        
+        pnlCustomerRow.add(lblCustomerName, BorderLayout.CENTER);
+        pnlCustomerRow.add(btnUsePoints, BorderLayout.EAST);
+
+        // ── Points usage panel ────────────────────────────────────────────────
+        pnlPointsUsage = new JPanel();
+        pnlPointsUsage.setLayout(new BoxLayout(pnlPointsUsage, BoxLayout.Y_AXIS));
+        pnlPointsUsage.setOpaque(false);
+        pnlPointsUsage.setVisible(false);
+        pnlPointsUsage.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1, true),
+                new EmptyBorder(8, 10, 8, 10)));
+
+        lblLoyaltyPointsAvailable = new JLabel("Điểm tích lũy hiện tại: 0");
+        lblLoyaltyPointsAvailable.setFont(FONT_BOLD);
+        lblLoyaltyPointsAvailable.setForeground(TEXT_MAIN);
+
+        JPanel pnlInputRow = new JPanel(new BorderLayout(6, 0));
+        pnlInputRow.setOpaque(false);
+        JLabel lblInputLabel = new JLabel("Điểm muốn dùng: ");
+        lblInputLabel.setFont(FONT_BODY);
+        lblInputLabel.setForeground(TEXT_SUB);
+
+        txtPointsToUse = new JTextField("0");
+        txtPointsToUse.setFont(FONT_BOLD);
+        txtPointsToUse.setPreferredSize(new Dimension(80, 28));
+        txtPointsToUse.setHorizontalAlignment(JTextField.RIGHT);
+        txtPointsToUse.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1, true),
+                new EmptyBorder(0, 6, 0, 6)));
+
+        txtPointsToUse.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e)  { updateTotalPrice(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e)  { updateTotalPrice(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { updateTotalPrice(); }
+        });
+
+        pnlInputRow.add(lblInputLabel, BorderLayout.WEST);
+        pnlInputRow.add(txtPointsToUse, BorderLayout.CENTER);
+
+        pnlPointsUsage.add(lblLoyaltyPointsAvailable);
+        pnlPointsUsage.add(Box.createVerticalStrut(6));
+        pnlPointsUsage.add(pnlInputRow);
 
         // ── Assemble card ────────────────────────────────────────────────────
         JPanel top = new JPanel();
@@ -378,8 +543,10 @@ public class SalesPanel extends JPanel {
         top.add(sep);
         top.add(Box.createVerticalStrut(10));
         top.add(pnlPhoneRow);
-        top.add(Box.createVerticalStrut(4));
-        top.add(lblCustomerName);
+        top.add(Box.createVerticalStrut(6));
+        top.add(pnlCustomerRow);
+        top.add(Box.createVerticalStrut(6));
+        top.add(pnlPointsUsage);
         top.add(Box.createVerticalStrut(8));
 
         card.add(top,          BorderLayout.NORTH);
@@ -409,7 +576,62 @@ public class SalesPanel extends JPanel {
     // PRODUCT CARD
     // =========================================================================
     private JPanel createProductCard(int id, String name, long price, int stock) {
-        return createProductCard(id, name, price, stock, null, null);
+        ImageIcon img = getProductImageByName(name);
+        return createProductCard(id, name, price, stock, null, img);
+    }
+
+    private ImageIcon getProductImageByName(String name) {
+        String filename = null;
+        String lower = name.toLowerCase();
+        if (lower.contains("royal canin") || lower.contains("royal")) {
+            filename = "royal_canin.png";
+        } else if (lower.contains("whiskas")) {
+            filename = "whiskas.png";
+        } else if (lower.contains("vòng cổ") || lower.contains("xích") || lower.contains("collar") || lower.contains("dây dắt")) {
+            filename = "dog_collar.png";
+        } else if (lower.contains("nệm") || lower.contains("giường") || lower.contains("bed")) {
+            filename = "pet_bed.png";
+        } else if (lower.contains("shampoo") || lower.contains("sữa tắm") || lower.contains("dầu gội")) {
+            filename = "pet_shampoo.png";
+        } else if (lower.contains("máy lọc nước") || lower.contains("máy uống nước") || lower.contains("fountain") || lower.contains("đài phun nước")) {
+            filename = "water_fountain.png";
+        } else if (lower.contains("cần câu") || lower.contains("lông vũ") || lower.contains("cát tặc")) {
+            filename = "cat_toy.png";
+        } else if (lower.contains("đồ chơi") || lower.contains("xương") || lower.contains("toy") || lower.contains("bóng")) {
+            filename = "dog_toy.png";
+        } else if (lower.contains("cát") || lower.contains("litter") || lower.contains("vệ sinh")) {
+            filename = "cat_litter.png";
+        } else if (lower.contains("chuồng") || lower.contains("lồng") || lower.contains("carrier") || lower.contains("vận chuyển") || lower.contains("túi xách")) {
+            filename = "pet_carrier.png";
+        } else if (lower.contains("lược") || lower.contains("bàn chải") || lower.contains("brush") || lower.contains("chải lông") || lower.contains("tỉa lông") || lower.contains("cắt tỉa")) {
+            filename = "grooming_brush.png";
+        } else if (lower.contains("smartheart") || lower.contains("smart")) {
+            filename = "smartheart_puppy.png";
+        } else if (lower.contains("ciao") || lower.contains("churu") || lower.contains("súp thưởng")) {
+            filename = "ciao_churu.png";
+        } else if (lower.contains("gel") || lower.contains("megaderm") || lower.contains("dinh dưỡng")) {
+            filename = "virbac_megaderm.png";
+        } else if (lower.contains("khách sạn") || lower.contains("deluxe") || lower.contains("phòng")) {
+            filename = "pet_hotel.png";
+        } else if (lower.contains("đưa đón") || lower.contains("taxi")) {
+            filename = "pet_taxi.png";
+        } else if (lower.contains("găng tay") || lower.contains("y tế")) {
+            filename = "medical_gloves.png";
+        } else if (lower.contains("pomeranian") || lower.contains("phốc sóc") || lower.contains("chó phốc")) {
+            filename = "dog_logo.png"; // Fallback to logo for real dogs
+        }
+        
+        if (filename != null) {
+            try {
+                java.net.URL imgURL = getClass().getClassLoader().getResource("images/" + filename);
+                if (imgURL != null) {
+                    return new ImageIcon(imgURL);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 
     private JPanel createProductCard(int id, String name, long price, int stock,
@@ -610,8 +832,31 @@ public class SalesPanel extends JPanel {
     }
 
     /** Returns the customer the cashier selected from the dialog (null if none). */
-    public is216.petshop.model.Customer getSelectedCustomer() {
+    public is216.petshop.Customer.Customer getSelectedCustomer() {
         return selectedCustomer;
+    }
+
+    public void setSelectedCustomer(is216.petshop.Customer.Customer customer) {
+        this.selectedCustomer = customer;
+        if (customer != null) {
+            txtPhone.setText(customer.getPhone());
+            setCustomerName(customer.getName()
+                    + " (" + String.format("%,d", customer.getLoyaltyPoints()) + " điểm)");
+            if (pnlCustomerRow != null) pnlCustomerRow.setVisible(true);
+            if (btnUsePoints != null) btnUsePoints.setVisible(true);
+            if (lblLoyaltyPointsAvailable != null) {
+                lblLoyaltyPointsAvailable.setText("Điểm tích lũy hiện tại: " + String.format("%,d", customer.getLoyaltyPoints()));
+            }
+        } else {
+            txtPhone.setText("");
+            setCustomerName(null);
+            if (pnlCustomerRow != null) pnlCustomerRow.setVisible(false);
+            if (btnUsePoints != null) btnUsePoints.setVisible(false);
+            if (pnlPointsUsage != null) pnlPointsUsage.setVisible(false);
+            if (txtPointsToUse != null) txtPointsToUse.setText("0");
+        }
+        revalidate();
+        repaint();
     }
 
     /**
@@ -620,7 +865,7 @@ public class SalesPanel extends JPanel {
      * If the list is empty, shows a "not found" message instead.
      */
     public void showCustomerSelectionDialog(
-            java.util.List<is216.petshop.model.Customer> customers) {
+            java.util.List<is216.petshop.Customer.Customer> customers) {
 
         if (customers == null || customers.isEmpty()) {
             showMessage("Không tìm thấy khách hàng với số điện thoại này.", false);
@@ -655,7 +900,7 @@ public class SalesPanel extends JPanel {
         DefaultTableModel dlgModel = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
-        for (is216.petshop.model.Customer c : customers) {
+        for (is216.petshop.Customer.Customer c : customers) {
             dlgModel.addRow(new Object[]{
                 c.getId(),
                 c.getName(),
@@ -671,7 +916,7 @@ public class SalesPanel extends JPanel {
         tbl.setIntercellSpacing(new Dimension(0, 0));
         tbl.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tbl.setSelectionBackground(new Color(238, 242, 255));
-        tbl.setSelectionForeground(TEXT_MAIN);
+        tbl.setSelectionForeground(PRIMARY);
         tbl.getTableHeader().setFont(FONT_BOLD);
         tbl.getTableHeader().setBackground(new Color(249, 250, 251));
         tbl.getTableHeader().setForeground(TEXT_SUB);
@@ -714,10 +959,7 @@ public class SalesPanel extends JPanel {
         Runnable doSelect = () -> {
             int row = tbl.getSelectedRow();
             if (row < 0) return;
-            selectedCustomer = customers.get(row);
-            // Update the name tag in the cart panel
-            setCustomerName(selectedCustomer.getName()
-                    + "  ·  " + String.format("%,d", selectedCustomer.getLoyaltyPoints()) + " điểm");
+            setSelectedCustomer(customers.get(row));
             dlg.dispose();
             // Notify Controller
             if (customerSelectedListener != null) {
@@ -743,7 +985,7 @@ public class SalesPanel extends JPanel {
      */
     public void setCustomerName(String name) {
         if (name != null && !name.isBlank()) {
-            lblCustomerName.setText("\u2713 " + name);
+            lblCustomerName.setText(name);
             lblCustomerName.setVisible(true);
         } else {
             lblCustomerName.setText("");
@@ -778,11 +1020,13 @@ public class SalesPanel extends JPanel {
                 cartModel.setValueAt(newQty,       i, 2);
                 cartModel.setValueAt(newQty * price, i, 3);
                 updateEmptyCartVisibility();
+                updateCartButtonsVisibility();
                 return;
             }
         }
         cartModel.addRow(new Object[]{id, name, quantity, price * quantity});
         updateEmptyCartVisibility();
+        updateCartButtonsVisibility();
     }
 
     public void updateTotalPrice() {
@@ -790,26 +1034,361 @@ public class SalesPanel extends JPanel {
         for (int i = 0; i < tblCart.getRowCount(); i++) {
             total += Long.parseLong(tblCart.getValueAt(i, 3).toString());
         }
+        
+        int points = getPointsToUse();
+        if (points > 0) {
+            double discount = points * 0.1;
+            total = Math.max(total - (long) discount, 0);
+        }
+
         currentTotal = total;
         lblTotalPrice.setText("Tổng tiền: " + String.format("%,d", total) + " VNĐ");
         recalcChange();
     }
 
+    public int getPointsToUse() {
+        if (selectedCustomer == null || pnlPointsUsage == null || !pnlPointsUsage.isVisible()) return 0;
+        try {
+            String raw = txtPointsToUse.getText().replaceAll("[^\\d]", "");
+            if (raw.isEmpty()) return 0;
+            int points = Integer.parseInt(raw);
+            long maxPoints = selectedCustomer.getLoyaltyPoints();
+            if (points > maxPoints) {
+                points = (int) maxPoints;
+                final int finalPoints = points;
+                SwingUtilities.invokeLater(() -> txtPointsToUse.setText(String.valueOf(finalPoints)));
+            }
+            return points;
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
     public int getCartRowCount() { return tblCart.getRowCount(); }
+
+    public long getCurrentTotal() {
+        return currentTotal;
+    }
 
     public void clearCart() {
         if (cartModel != null) {
             cartModel.setRowCount(0);
             currentTotal = 0;
-            selectedCustomer = null;
+            setSelectedCustomer(null);
             lblTotalPrice.setText("Tổng tiền: 0 VNĐ");
             txtCashReceived.setText("0");
             lblChange.setText("0 VNĐ");
             lblChange.setForeground(new Color(5, 150, 105));
-            setCustomerName(null);
-            txtPhone.setText("");
             updateEmptyCartVisibility();
+            updateCartButtonsVisibility();
         }
+    }
+
+    private void updateCartButtonsVisibility() {
+        if (pnlAuxButtons != null) {
+            boolean hasItems = getCartRowCount() > 0;
+            pnlAuxButtons.setVisible(hasItems);
+            pnlAuxButtons.revalidate();
+            pnlAuxButtons.repaint();
+        }
+    }
+
+    public void addPendingListener(ActionListener listener) {
+        if (btnPending != null) {
+            btnPending.addActionListener(listener);
+        }
+    }
+
+    public void addViewPendingListener(ActionListener listener) {
+        if (btnViewPending != null) {
+            btnViewPending.addActionListener(listener);
+        }
+    }
+
+    public void addFinishedServicesListener(ActionListener listener) {
+        if (btnFinishedServices != null) {
+            btnFinishedServices.addActionListener(listener);
+        }
+    }
+
+    public Integer getCurrentBookingId() {
+        return currentBookingId;
+    }
+
+    public void setCurrentBookingId(Integer bookingId) {
+        this.currentBookingId = bookingId;
+    }
+
+    public void loadBookingIntoCart(is216.petshop.Booking.Booking booking) {
+        this.currentBookingId = booking.getMaLichHen();
+        
+        // 1. Clear cart
+        cartModel.setRowCount(0);
+        currentTotal = 0;
+        
+        // 2. Resolve customer
+        is216.petshop.Customer.CustomerDAO cDao = new is216.petshop.Customer.CustomerDAO();
+        java.util.List<is216.petshop.Customer.Customer> custs = cDao.search(booking.getSoDienThoai());
+        if (!custs.isEmpty()) {
+            setSelectedCustomer(custs.get(0));
+        } else {
+            // Fallback: manually construct a Customer object
+            is216.petshop.Customer.Customer temp = new is216.petshop.Customer.Customer();
+            temp.setId(booking.getMaKh());
+            temp.setName(booking.getTenKhachHang());
+            temp.setPhone(booking.getSoDienThoai());
+            setSelectedCustomer(temp);
+        }
+        
+        // 3. For each service in the booking, match it against a product in the san_pham table
+        // to retrieve the MASANPHAM (for inventory/transaction consistency).
+        // If not found, use a fallback ID (e.g. 3 which is a service product).
+        try (java.sql.Connection conn = is216.petshop.util.DBConnection.getConnection()) {
+            for (is216.petshop.Booking.BookingServiceLine line : booking.getServices()) {
+                int productId = -1;
+                // Query by name match
+                String sql = "SELECT MASANPHAM FROM san_pham WHERE TENSANPHAM = ?";
+                try (java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setString(1, line.getTenDichVu());
+                    try (java.sql.ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            productId = rs.getInt("MASANPHAM");
+                        }
+                    }
+                }
+                
+                // Fallback to searching with LIKE operator
+                if (productId == -1) {
+                    String sqlLike = "SELECT MASANPHAM FROM san_pham WHERE TENSANPHAM LIKE ? LIMIT 1";
+                    try (java.sql.PreparedStatement ps = conn.prepareStatement(sqlLike)) {
+                        ps.setString(1, "%" + line.getTenDichVu() + "%");
+                        try (java.sql.ResultSet rs = ps.executeQuery()) {
+                            if (rs.next()) {
+                                productId = rs.getInt("MASANPHAM");
+                            }
+                        }
+                    }
+                }
+                
+                // Final fallback: use a default service ID from san_pham (e.g. 3)
+                if (productId == -1) {
+                    productId = 3; // Fallback to 'Combo Tắm & Cắt tỉa lông mèo dưới 5kg'
+                }
+                
+                // Add to cart table
+                addProductToCartTable(productId, line.getTenDichVu(), (long) line.getGia(), 1);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            // Fallback addition if DB connection is unavailable
+            for (is216.petshop.Booking.BookingServiceLine line : booking.getServices()) {
+                addProductToCartTable(3, line.getTenDichVu(), (long) line.getGia(), 1);
+            }
+        }
+        
+        // Update totals
+        updateTotalPrice();
+    }
+
+    public void showFinishedServicesDialog(java.util.List<is216.petshop.Booking.Booking> bookings,
+                                           java.util.function.Consumer<is216.petshop.Booking.Booking> onSelected) {
+        Window owner = SwingUtilities.getWindowAncestor(this);
+        JDialog dlg = new JDialog(owner, "Dịch vụ hoàn thành chờ thanh toán", Dialog.ModalityType.APPLICATION_MODAL);
+        dlg.setLayout(new BorderLayout());
+        dlg.setSize(750, 480);
+        dlg.setLocationRelativeTo(this);
+        dlg.setResizable(false);
+
+        // Header Panel
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(new Color(16, 185, 129)); // green-500
+        header.setBorder(new EmptyBorder(16, 24, 16, 24));
+        JLabel lblTitle = new JLabel("DỊCH VỤ HOÀN THÀNH CHỜ THANH TOÁN");
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblTitle.setForeground(Color.WHITE);
+        JLabel lblSub = new JLabel("Chọn một dịch vụ đã hoàn thành để lập hóa đơn thanh toán");
+        lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblSub.setForeground(new Color(209, 250, 229));
+        header.add(lblTitle, BorderLayout.NORTH);
+        header.add(lblSub, BorderLayout.SOUTH);
+
+        // Table Model
+        String[] columns = {"MÃ LH", "THỜI GIAN", "KHÁCH HÀNG", "SỐ ĐIỆN THOẠI", "DỊCH VỤ", "THÀNH TIỀN"};
+        DefaultTableModel dlgModel = new DefaultTableModel(columns, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        };
+
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm");
+        for (is216.petshop.Booking.Booking b : bookings) {
+            double total = 0;
+            for (is216.petshop.Booking.BookingServiceLine line : b.getServices()) {
+                total += line.getGia();
+            }
+            dlgModel.addRow(new Object[]{
+                "LH-" + b.getMaLichHen(),
+                b.getThoiGianHen() != null ? sdf.format(b.getThoiGianHen()) : "N/A",
+                b.getTenKhachHang() != null ? b.getTenKhachHang() : "Khách vãng lai",
+                b.getSoDienThoai() != null ? b.getSoDienThoai() : "",
+                b.getServicesSummary(),
+                String.format("%,.0f VNĐ", total)
+            });
+        }
+
+        JTable tbl = new JTable(dlgModel);
+        tbl.setFont(FONT_BODY);
+        tbl.setRowHeight(36);
+        tbl.setShowGrid(false);
+        tbl.setShowHorizontalLines(true);
+        tbl.setGridColor(BORDER_COLOR);
+        tbl.setSelectionBackground(new Color(209, 250, 229));
+        tbl.setSelectionForeground(new Color(6, 95, 70));
+        tbl.getTableHeader().setFont(FONT_BOLD);
+        tbl.getTableHeader().setBackground(new Color(249, 250, 251));
+        tbl.getTableHeader().setForeground(TEXT_SUB);
+        tbl.getTableHeader().setReorderingAllowed(false);
+
+        if (dlgModel.getRowCount() > 0) tbl.setRowSelectionInterval(0, 0);
+
+        JScrollPane scrollDlg = new JScrollPane(tbl);
+        scrollDlg.setBorder(BorderFactory.createEmptyBorder());
+
+        // Footer buttons
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 12));
+        footer.setBackground(new Color(249, 250, 251));
+        footer.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, BORDER_COLOR));
+
+        JButton btnCancel = createRoundedButton("Hủy", new Color(229, 231, 235), TEXT_MAIN, 8);
+        btnCancel.setFont(FONT_BOLD);
+        btnCancel.setPreferredSize(new Dimension(90, 36));
+
+        JButton btnSelect = createRoundedButton("Chọn lập hóa đơn", new Color(16, 185, 129), Color.WHITE, 8);
+        btnSelect.setFont(FONT_BOLD);
+        btnSelect.setPreferredSize(new Dimension(160, 36));
+
+        footer.add(btnCancel);
+        footer.add(btnSelect);
+
+        dlg.add(header,    BorderLayout.NORTH);
+        dlg.add(scrollDlg, BorderLayout.CENTER);
+        dlg.add(footer,    BorderLayout.SOUTH);
+
+        btnCancel.addActionListener(e -> dlg.dispose());
+
+        Runnable doSelect = () -> {
+            int row = tbl.getSelectedRow();
+            if (row < 0) return;
+            is216.petshop.Booking.Booking selectedBooking = bookings.get(row);
+            onSelected.accept(selectedBooking);
+            dlg.dispose();
+        };
+
+        btnSelect.addActionListener(e -> doSelect.run());
+        tbl.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2) doSelect.run();
+            }
+        });
+
+        dlg.setVisible(true);
+    }
+
+
+    public void showPendingOrdersDialog(java.util.List<is216.petshop.dao.InvoiceDAO.PendingOrder> pendingOrders,
+                                        java.util.function.Consumer<is216.petshop.dao.InvoiceDAO.PendingOrder> onSelected) {
+        Window owner = SwingUtilities.getWindowAncestor(this);
+        JDialog dlg = new JDialog(owner, "Danh sách đơn hàng chờ thanh toán", Dialog.ModalityType.APPLICATION_MODAL);
+        dlg.setLayout(new BorderLayout());
+        dlg.setSize(750, 480);
+        dlg.setLocationRelativeTo(this);
+        dlg.setResizable(false);
+
+        // Header Panel
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(PRIMARY);
+        header.setBorder(new EmptyBorder(16, 24, 16, 24));
+        JLabel lblTitle = new JLabel("ĐƠN HÀNG CHỜ THANH TOÁN");
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblTitle.setForeground(Color.WHITE);
+        JLabel lblSub = new JLabel("Chọn một đơn hàng chờ để tiếp tục thanh toán");
+        lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblSub.setForeground(new Color(199, 210, 254));
+        header.add(lblTitle, BorderLayout.NORTH);
+        header.add(lblSub, BorderLayout.SOUTH);
+
+        // Table Model
+        String[] columns = {"MÃ HĐ", "THỜI GIAN", "KHÁCH HÀNG", "NHÂN VIÊN", "TỔNG TIỀN", "GHI CHÚ"};
+        DefaultTableModel dlgModel = new DefaultTableModel(columns, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        };
+
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm");
+        for (is216.petshop.dao.InvoiceDAO.PendingOrder o : pendingOrders) {
+            dlgModel.addRow(new Object[]{
+                "HD-" + o.id,
+                o.date != null ? sdf.format(o.date) : "N/A",
+                o.customerName,
+                o.employeeName,
+                String.format("%,d VNĐ", o.totalAmount),
+                o.note != null ? o.note : ""
+            });
+        }
+
+        JTable tbl = new JTable(dlgModel);
+        tbl.setFont(FONT_BODY);
+        tbl.setRowHeight(36);
+        tbl.setShowGrid(false);
+        tbl.setShowHorizontalLines(true);
+        tbl.setGridColor(BORDER_COLOR);
+        tbl.setSelectionBackground(new Color(238, 242, 255));
+        tbl.setSelectionForeground(PRIMARY);
+        tbl.getTableHeader().setFont(FONT_BOLD);
+        tbl.getTableHeader().setBackground(new Color(249, 250, 251));
+        tbl.getTableHeader().setForeground(TEXT_SUB);
+        tbl.getTableHeader().setReorderingAllowed(false);
+
+        if (dlgModel.getRowCount() > 0) tbl.setRowSelectionInterval(0, 0);
+
+        JScrollPane scrollDlg = new JScrollPane(tbl);
+        scrollDlg.setBorder(BorderFactory.createEmptyBorder());
+
+        // Footer buttons
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 12));
+        footer.setBackground(new Color(249, 250, 251));
+        footer.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, BORDER_COLOR));
+
+        JButton btnCancel = createRoundedButton("Hủy", new Color(229, 231, 235), TEXT_MAIN, 8);
+        btnCancel.setFont(FONT_BOLD);
+        btnCancel.setPreferredSize(new Dimension(90, 36));
+
+        JButton btnSelect = createRoundedButton("Chọn đơn hàng", PRIMARY, Color.WHITE, 8);
+        btnSelect.setFont(FONT_BOLD);
+        btnSelect.setPreferredSize(new Dimension(150, 36));
+
+        footer.add(btnCancel);
+        footer.add(btnSelect);
+
+        dlg.add(header,    BorderLayout.NORTH);
+        dlg.add(scrollDlg, BorderLayout.CENTER);
+        dlg.add(footer,    BorderLayout.SOUTH);
+
+        btnCancel.addActionListener(e -> dlg.dispose());
+
+        Runnable doSelect = () -> {
+            int row = tbl.getSelectedRow();
+            if (row < 0) return;
+            is216.petshop.dao.InvoiceDAO.PendingOrder selectedOrder = pendingOrders.get(row);
+            onSelected.accept(selectedOrder);
+            dlg.dispose();
+        };
+
+        btnSelect.addActionListener(e -> doSelect.run());
+        tbl.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2) doSelect.run();
+            }
+        });
+
+        dlg.setVisible(true);
     }
 
     public void showMessage(String message, boolean isError) {
@@ -941,6 +1520,10 @@ public class SalesPanel extends JPanel {
         @Override public boolean isBorderOpaque() { return false; }
     }
 
+    public DefaultTableModel getCartModel() {
+        return cartModel;
+    }
+
     /** Creates a custom drawn clock icon for the pending orders button */
     private ImageIcon createClockIcon(int size, Color color) {
         java.awt.image.BufferedImage img = new java.awt.image.BufferedImage(size, size, java.awt.image.BufferedImage.TYPE_INT_ARGB);
@@ -960,5 +1543,169 @@ public class SalesPanel extends JPanel {
         
         g.dispose();
         return new ImageIcon(img);
+    }
+
+    // ── Quantity adjustments inside cart JTable ──────────────────────────────
+    private static class QuantityPanel extends JPanel {
+        final JButton btnMinus = new JButton("-");
+        final JLabel  lblQty   = new JLabel("1", SwingConstants.CENTER);
+        final JButton btnPlus  = new JButton("+");
+
+        QuantityPanel() {
+            setLayout(new BorderLayout(4, 0));
+            setOpaque(true);
+            setBackground(Color.WHITE);
+
+            btnMinus.setPreferredSize(new Dimension(22, 22));
+            btnPlus.setPreferredSize(new Dimension(22, 22));
+            
+            styleBtn(btnMinus);
+            styleBtn(btnPlus);
+
+            add(btnMinus, BorderLayout.WEST);
+            add(lblQty,   BorderLayout.CENTER);
+            add(btnPlus,  BorderLayout.EAST);
+        }
+
+        private void styleBtn(JButton btn) {
+            btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            btn.setForeground(new Color(79, 70, 229)); // PRIMARY color
+            btn.setBackground(new Color(238, 242, 255));
+            btn.setBorder(BorderFactory.createLineBorder(new Color(199, 210, 254), 1, true));
+            btn.setFocusPainted(false);
+            btn.setContentAreaFilled(true);
+            btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btn.setMargin(new Insets(0, 0, 0, 0));
+        }
+    }
+
+    private static class QuantityRenderer implements javax.swing.table.TableCellRenderer {
+        private final QuantityPanel panel = new QuantityPanel();
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                boolean isSelected, boolean hasFocus, int row, int column) {
+            panel.lblQty.setText(value != null ? value.toString() : "1");
+            if (isSelected) {
+                panel.setBackground(table.getSelectionBackground());
+                panel.lblQty.setForeground(table.getSelectionForeground());
+            } else {
+                panel.setBackground(table.getBackground());
+                panel.lblQty.setForeground(table.getForeground());
+            }
+            return panel;
+        }
+    }
+
+    private static class QuantityEditor extends javax.swing.AbstractCellEditor 
+            implements javax.swing.table.TableCellEditor {
+        private final QuantityPanel panel = new QuantityPanel();
+        private final JTable table;
+        private final DefaultTableModel model;
+        private final SalesPanel salesPanel;
+
+        QuantityEditor(JTable table, DefaultTableModel model, SalesPanel salesPanel) {
+            this.table = table;
+            this.model = model;
+            this.salesPanel = salesPanel;
+
+            panel.btnMinus.addActionListener(e -> {
+                int row = table.getEditingRow();
+                if (row >= 0) {
+                    int currentQty = Integer.parseInt(model.getValueAt(row, 2).toString());
+                    if (currentQty > 1) {
+                        int newQty = currentQty - 1;
+                        model.setValueAt(newQty, row, 2);
+                        long price = getUnitPrice(row);
+                        model.setValueAt(newQty * price, row, 3);
+                        salesPanel.updateTotalPrice();
+                        panel.lblQty.setText(String.valueOf(newQty));
+                    } else if (currentQty == 1) {
+                        int option = JOptionPane.showConfirmDialog(table,
+                                "Bạn có muốn xóa sản phẩm này khỏi giỏ hàng?",
+                                "Xác nhận xóa",
+                                JOptionPane.YES_NO_OPTION,
+                                JOptionPane.QUESTION_MESSAGE);
+                        if (option == JOptionPane.YES_OPTION) {
+                            fireEditingCanceled();
+                            model.removeRow(row);
+                            salesPanel.updateTotalPrice();
+                            return;
+                        }
+                    }
+                }
+                fireEditingStopped();
+            });
+
+            panel.btnPlus.addActionListener(e -> {
+                int row = table.getEditingRow();
+                if (row >= 0) {
+                    int currentQty = Integer.parseInt(model.getValueAt(row, 2).toString());
+                    int id = Integer.parseInt(model.getValueAt(row, 0).toString());
+                    
+                    // Validate stock limit
+                    int maxStock = getProductStock(id);
+                    if (currentQty >= maxStock) {
+                        JOptionPane.showMessageDialog(table, 
+                                "Không thể tăng thêm! Số lượng tồn kho tối đa là: " + maxStock,
+                                "Vượt quá tồn kho", 
+                                JOptionPane.WARNING_MESSAGE);
+                        fireEditingCanceled();
+                        return;
+                    }
+
+                    int newQty = currentQty + 1;
+                    model.setValueAt(newQty, row, 2);
+                    long price = getUnitPrice(row);
+                    model.setValueAt(newQty * price, row, 3);
+                    salesPanel.updateTotalPrice();
+                    panel.lblQty.setText(String.valueOf(newQty));
+                }
+                fireEditingStopped();
+            });
+        }
+
+        private long getUnitPrice(int row) {
+            long totalPrice = Long.parseLong(model.getValueAt(row, 3).toString());
+            int qty = Integer.parseInt(model.getValueAt(row, 2).toString());
+            return qty == 0 ? 0 : totalPrice / qty;
+        }
+
+        private int getProductStock(int id) {
+            try (java.sql.Connection conn = is216.petshop.util.DBConnection.getConnection();
+                 java.sql.PreparedStatement pstmt = conn.prepareStatement("SELECT SL FROM SAN_PHAM WHERE MASANPHAM = ?")) {
+                pstmt.setInt(1, id);
+                try (java.sql.ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getInt("SL");
+                    }
+                }
+            } catch (java.sql.SQLException e) {
+                e.printStackTrace();
+            }
+            return 999; // fallback if DB check fails
+        }
+
+        @Override
+        public Object getCellEditorValue() {
+            return panel.lblQty.getText();
+        }
+
+        @Override
+        public Component getTableCellEditorComponent(JTable table, Object value,
+                boolean isSelected, int row, int column) {
+            panel.lblQty.setText(value != null ? value.toString() : "1");
+            panel.setBackground(table.getSelectionBackground());
+            panel.lblQty.setForeground(table.getSelectionForeground());
+            return panel;
+        }
+
+        @Override
+        public boolean isCellEditable(java.util.EventObject e) {
+            if (e instanceof java.awt.event.MouseEvent) {
+                return ((java.awt.event.MouseEvent) e).getClickCount() >= 1;
+            }
+            return true;
+        }
     }
 }

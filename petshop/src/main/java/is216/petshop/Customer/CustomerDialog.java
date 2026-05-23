@@ -1,9 +1,9 @@
-package is216.petshop.view;
+package is216.petshop.Customer;
 
-import is216.petshop.dao.CustomerDAO;
-import is216.petshop.model.Customer;
-import is216.petshop.view.Customerpanel.FlatBtn;
-import is216.petshop.view.Customerpanel.RoundedBorder;
+import is216.petshop.Customer.CustomerDAO;
+import is216.petshop.Customer.Customer;
+import is216.petshop.Customer.Customerpanel.FlatBtn;
+import is216.petshop.Customer.Customerpanel.RoundedBorder;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -101,7 +101,6 @@ public class CustomerDialog extends JDialog {
             String phone = tfP.getText().trim();
             String email = tfE.getText().trim();
             String addr = tfA.getText().trim();
-            String pType = typeKeys[cbType.getSelectedIndex()];
             String ptsStr = tfPts.getText().trim();
             String dateStr = tfDate.getText().trim();
 
@@ -134,7 +133,6 @@ public class CustomerDialog extends JDialog {
                 c.setPhone(phone);
                 c.setEmail(email);
                 c.setAddress(addr);
-                c.setPartnerType(pType);
                 c.setLoyaltyPoints(points);
                 c.setJoinDate(joinDate);
 

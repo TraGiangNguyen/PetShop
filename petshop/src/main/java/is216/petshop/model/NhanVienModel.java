@@ -12,20 +12,18 @@ public class NhanVienModel {
     private String chucVu;
     private String sdt;
     private String email;
-    private long luong;
     private Date ngayVaoLam;
     private String trangThai;
 
     public NhanVienModel() {
     }
 
-    public NhanVienModel(int maNhanVien, String hoTen, String chucVu, String sdt, String email, long luong, Date ngayVaoLam, String trangThai) {
+    public NhanVienModel(int maNhanVien, String hoTen, String chucVu, String sdt, String email, Date ngayVaoLam, String trangThai) {
         this.maNhanVien = maNhanVien;
         this.hoTen = hoTen;
         this.chucVu = chucVu;
         this.sdt = sdt;
         this.email = email;
-        this.luong = luong;
         this.ngayVaoLam = ngayVaoLam;
         this.trangThai = trangThai;
     }
@@ -44,9 +42,6 @@ public class NhanVienModel {
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
-
-    public long getLuong() { return luong; }
-    public void setLuong(long luong) { this.luong = luong; }
 
     public Date getNgayVaoLam() { return ngayVaoLam; }
     public void setNgayVaoLam(Date ngayVaoLam) { this.ngayVaoLam = ngayVaoLam; }

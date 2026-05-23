@@ -80,8 +80,7 @@ public class NhanVienPanel extends JPanel {
         txtSearch.putClientProperty("FlatLaf.style", "arc: 8; margin: 4,8,4,8");
         txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 
-        String[] sortOptions = { "Sắp xếp mặc định", "Tên (A-Z)", "Tên (Z-A)", "Lương (Thấp - Cao)",
-                "Lương (Cao - Thấp)" };
+        String[] sortOptions = { "Sắp xếp mặc định", "Tên (A-Z)", "Tên (Z-A)"};
         JComboBox<String> cbSort = new JComboBox<>(sortOptions);
         cbSort.setPreferredSize(new Dimension(180, 36));
         cbSort.putClientProperty("FlatLaf.style", "arc: 8");
@@ -123,12 +122,11 @@ public class NhanVienPanel extends JPanel {
         contentPanel.setOpaque(false);
         contentPanel.setBackground(COLOR_SURFACE);
 
-        String[] columnNames = { "HỌ TÊN", "CHỨC VỤ", "SỐ ĐIỆN THOẠI", "EMAIL", "LƯƠNG", "NGÀY VÀO LÀM", "TRẠNG THÁI",
-                "THAO TÁC" };
+        String[] columnNames = { "HỌ TÊN", "CHỨC VỤ", "SỐ ĐIỆN THOẠI", "EMAIL", "NGÀY VÀO LÀM", "TRẠNG THÁI", "THAO TÁC"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 7; // Chỉ cho phép edit cột thao tác để click nút
+                return column == 6; // Chỉ cho phép edit cột thao tác để click nút
             }
         };
 
@@ -176,8 +174,7 @@ public class NhanVienPanel extends JPanel {
         table.getColumnModel().getColumn(3).setPreferredWidth(180);
         table.getColumnModel().getColumn(4).setPreferredWidth(120);
         table.getColumnModel().getColumn(5).setPreferredWidth(120);
-        table.getColumnModel().getColumn(6).setPreferredWidth(130);
-        table.getColumnModel().getColumn(7).setPreferredWidth(100);
+        table.getColumnModel().getColumn(6).setPreferredWidth(120);
 
         // Default Renderer cho cột thường
         DefaultTableCellRenderer defRenderer = new DefaultTableCellRenderer() {
@@ -207,15 +204,14 @@ public class NhanVienPanel extends JPanel {
         table.getColumnModel().getColumn(2).setCellRenderer(defRenderer);
         table.getColumnModel().getColumn(3).setCellRenderer(defRenderer);
         table.getColumnModel().getColumn(4).setCellRenderer(defRenderer);
-        table.getColumnModel().getColumn(5).setCellRenderer(defRenderer);
 
         // Renderer cho cột Chức vụ & Trạng thái (Pill Badge)
         table.getColumnModel().getColumn(1).setCellRenderer(new BadgeRenderer());
-        table.getColumnModel().getColumn(6).setCellRenderer(new BadgeRenderer());
+        table.getColumnModel().getColumn(5).setCellRenderer(new BadgeRenderer());
 
         // Renderer & Editor cho cột Thao tác
-        table.getColumnModel().getColumn(7).setCellRenderer(new ActionCellRenderer());
-        table.getColumnModel().getColumn(7).setCellEditor(new ActionCellEditor());
+        table.getColumnModel().getColumn(6).setCellRenderer(new ActionCellRenderer());
+        table.getColumnModel().getColumn(6).setCellEditor(new ActionCellEditor());
 
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.getViewport().setBackground(COLOR_SURFACE);
@@ -272,22 +268,6 @@ public class NhanVienPanel extends JPanel {
                 case 2: // Tên Z-A
                     rowSorter.setSortKeys(java.util.List.of(new RowSorter.SortKey(0, SortOrder.DESCENDING)));
                     break;
-                case 3: // Lương Thấp - Cao
-                    rowSorter.setComparator(4, (o1, o2) -> {
-                        Long l1 = parseCurrency(o1.toString());
-                        Long l2 = parseCurrency(o2.toString());
-                        return l1.compareTo(l2);
-                    });
-                    rowSorter.setSortKeys(java.util.List.of(new RowSorter.SortKey(4, SortOrder.ASCENDING)));
-                    break;
-                case 4: // Lương Cao - Thấp
-                    rowSorter.setComparator(4, (o1, o2) -> {
-                        Long l1 = parseCurrency(o1.toString());
-                        Long l2 = parseCurrency(o2.toString());
-                        return l1.compareTo(l2);
-                    });
-                    rowSorter.setSortKeys(java.util.List.of(new RowSorter.SortKey(4, SortOrder.DESCENDING)));
-                    break;
             }
         });
 
@@ -317,7 +297,6 @@ public class NhanVienPanel extends JPanel {
                     nv.getChucVu(),
                     nv.getSdt(),
                     nv.getEmail(),
-                    formatter.format(nv.getLuong()),
                     nv.getNgayVaoLam() != null ? sdf.format(nv.getNgayVaoLam()) : "",
                     nv.getTrangThai(),
                     "actions" // Chuỗi giả để trigger Editor
@@ -387,7 +366,7 @@ public class NhanVienPanel extends JPanel {
             Color textColor;
 
             String textLower = badgeText.toLowerCase();
-            if (textLower.contains("quản lý") || textLower.contains("admin")) {
+            if (textLower.contains("quản lý")) {
                 pillBgColor = new Color(239, 236, 255); // Tím nhạt
                 textColor = new Color(90, 69, 209);
             } else if (textLower.contains("bán hàng")) {

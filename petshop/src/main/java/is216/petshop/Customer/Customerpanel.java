@@ -1,7 +1,8 @@
-package is216.petshop.view;
+package is216.petshop.Customer;
 
-import is216.petshop.dao.CustomerDAO;
-import is216.petshop.model.Customer;
+import is216.petshop.Customer.CustomerDialog;
+import is216.petshop.Customer.CustomerDAO;
+import is216.petshop.Customer.Customer;
 
 import javax.swing.*;
 import javax.swing.border.*;

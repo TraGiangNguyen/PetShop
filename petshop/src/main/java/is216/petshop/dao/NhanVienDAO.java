@@ -15,14 +15,7 @@ import java.util.List;
 public class NhanVienDAO {
     public List<NhanVienModel> getDanhSachNhanVien() {
         List<NhanVienModel> list = new ArrayList<>();
-        String sql = "SELECT nv.MANHANVIEN, nv.HOTEN, IFNULL(vt.TENVAITRO, 'Chưa cấp quyền') AS CHUCVU, " +
-                "nv.SDT, nv.EMAIL, IFNULL(hsl.MUCLUONG, 0) AS LUONG, nv.NGAYVAOLAM, nv.TRANGTHAI " +
-                "FROM NHAN_VIEN nv " +
-                "LEFT JOIN PHAN_QUYEN_NHAN_VIEN pq ON nv.MANHANVIEN = pq.MANHANVIEN " +
-                "LEFT JOIN VAI_TRO vt ON pq.MAVAITRO = vt.MAVAITRO " +
-                "LEFT JOIN HO_SO_LUONG hsl ON nv.MANHANVIEN = hsl.MANHANVIEN " +
-                "WHERE nv.TRANGTHAI = 'Đang làm việc'";
-
+        String sql = "SELECT * FROM NHAN_VIEN";
         try (Connection con = DBConnection.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -34,7 +27,6 @@ public class NhanVienDAO {
                 nv.setChucVu(rs.getString("CHUCVU"));
                 nv.setSdt(rs.getString("SDT"));
                 nv.setEmail(rs.getString("EMAIL"));
-                nv.setLuong(rs.getLong("LUONG"));
                 nv.setNgayVaoLam(rs.getDate("NGAYVAOLAM"));
                 nv.setTrangThai(rs.getString("TRANGTHAI"));
                 list.add(nv);
@@ -45,47 +37,76 @@ public class NhanVienDAO {
         return list;
     }
 
-    public boolean addNhanVien(NhanVienModel nv, int maCuaHang, int maVaiTro, String username, String password) {
-        String sql = "{CALL sp_ThemNhanVien(?, ?, ?, ?, ?, ?, ?, ?, ?)}";
+    public boolean addNhanVien(NhanVienModel nv, String username, String password) {
+        // 1. SỬA: Thay đổi câu SQL thành 8 dấu chấm hỏi tương ứng với 8 tham số IN
+        String sql = "{CALL sp_ThemNhanVien(?, ?, ?, ?, ?, ?, ?, ?)}";
+        
         try (Connection con = DBConnection.getConnection();
                 java.sql.CallableStatement cs = con.prepareCall(sql)) {
-            cs.setInt(1, maCuaHang);
-            cs.setString(2, nv.getHoTen());
-            cs.setString(3, nv.getSdt());
-            cs.setString(4, nv.getEmail());
-            cs.setDate(5, new java.sql.Date(nv.getNgayVaoLam().getTime()));
-            cs.setInt(6, maVaiTro);
-            cs.setLong(7, nv.getLuong());
-            cs.setString(8, username);
-            cs.setString(9, password); // Trong thực tế nên hash password trước
+            
+            // 2. SỬA: Map chính xác các thuộc tính theo đúng thứ tự khai báo trong Stored Procedure
+            cs.setString(1, nv.getHoTen());
+            cs.setString(2, nv.getSdt());
+            cs.setString(3, nv.getEmail());
+            
+            // Kiểm tra tránh lỗi NullPointerException nếu ngày vào làm bị trống
+            if (nv.getNgayVaoLam() != null) {
+                cs.setDate(4, new java.sql.Date(nv.getNgayVaoLam().getTime()));
+            } else {
+                cs.setNull(4, java.sql.Types.DATE);
+            }
+            
+            cs.setString(5, nv.getChucVu());
+            cs.setString(6, nv.getTrangThai());
+            cs.setString(7, username);
+            cs.setString(8, password);
+            
+            // Thực thi câu lệnh
             cs.executeUpdate();
             return true;
         } catch (Exception e) {
+            System.err.println("Lỗi khi thêm nhân viên: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
 
-    public boolean updateNhanVien(NhanVienModel nv, int maVaiTro) {
-        String sql = "{CALL sp_CapNhatNhanVien(?, ?, ?, ?, ?, ?)}";
+    public boolean updateNhanVien(NhanVienModel nv) { // Tôi đã bỏ tham số int maVaiTro vì bạn không dùng tới nó
+        // 1. Sửa lại: Cần đúng 7 dấu chấm hỏi tương ứng với 7 tham số IN
+        String sql = "{CALL sp_CapNhatNhanVien(?, ?, ?, ?, ?, ?, ?)}"; 
+        
         try (Connection con = DBConnection.getConnection();
                 java.sql.CallableStatement cs = con.prepareCall(sql)) {
-            cs.setInt(1, nv.getMaNhanVien());
-            cs.setString(2, nv.getHoTen());
-            cs.setString(3, nv.getSdt());
-            cs.setString(4, nv.getEmail());
-            cs.setInt(5, maVaiTro);
-            cs.setLong(6, nv.getLuong());
+            
+            // 2. Sửa lại: Thứ tự truyền vào phải KHỚP 100% với Stored Procedure
+            cs.setInt(1, nv.getMaNhanVien());       // IN p_MaNhanVien
+            cs.setString(2, nv.getHoTen());         // IN p_HoTen
+            cs.setString(3, nv.getChucVu());        // IN p_ChucVu (Đưa lên vị trí số 3)
+            cs.setString(4, nv.getSdt());           // IN p_Sdt
+            cs.setString(5, nv.getEmail());         // IN p_Email
+            
+            // Xử lý an toàn cho ngày tháng để tránh lỗi NullPointerException
+            if (nv.getNgayVaoLam() != null) {
+                cs.setDate(6, new java.sql.Date(nv.getNgayVaoLam().getTime())); // IN p_NgayVaoLam
+            } else {
+                cs.setNull(6, java.sql.Types.DATE);
+            }
+            
+            // 3. Sửa lại: Bổ sung tham số thứ 7 bị thiếu
+            cs.setString(7, nv.getTrangThai());     // IN p_TrangThai
+            
             cs.executeUpdate();
             return true;
+            
         } catch (Exception e) {
+            System.err.println("Lỗi cập nhật nhân viên: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
 
     public boolean deleteNhanVien(int maNhanVien) {
-        String sql = "UPDATE NHAN_VIEN SET TRANGTHAI = 'Đã nghỉ việc' WHERE MANHANVIEN = ?";
+        String sql = "UPDATE NHAN_VIEN SET TRANGTHAI = 0 WHERE MANHANVIEN = (?)";
         try (Connection con = DBConnection.getConnection();
                 PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, maNhanVien);

@@ -10,7 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class NhanVienDialog extends JDialog {
-    private JTextField txtHoTen, txtEmail, txtSdt, txtLuong, txtNgayVaoLam;
+    private JTextField txtHoTen, txtEmail, txtSdt, txtNgayVaoLam;
     private JComboBox<String> cbChucVu;
     private boolean isEditMode;
     private NhanVienModel currentNv;
@@ -56,15 +56,14 @@ public class NhanVienDialog extends JDialog {
 
         // Row 1: Họ tên & Chức vụ
         txtHoTen = createField(formPanel, "HỌ TÊN", "Nhập họ và tên");
-        String[] vaitro = { "Admin", "Nhân viên bán hàng" };
+        String[] vaitro = { "Quản lý", "Nhân viên bán hàng" };
         cbChucVu = createCombo(formPanel, "CHỨC VỤ", vaitro);
 
         // Row 2: Email & SĐT
         txtEmail = createField(formPanel, "EMAIL", "ví dụ@petstore.com");
         txtSdt = createField(formPanel, "SỐ ĐIỆN THOẠI", "Nhập số điện thoại");
 
-        // Row 3: LƯƠNG & NGÀY VÀO LÀM
-        txtLuong = createField(formPanel, "LƯƠNG (VNĐ)", "Ví dụ: 15000000");
+        // NGÀY VÀO LÀM
         txtNgayVaoLam = createField(formPanel, "NGÀY VÀO LÀM (DD/MM/YYYY)", "20/05/2024");
 
         add(formPanel, BorderLayout.CENTER);
@@ -131,10 +130,9 @@ public class NhanVienDialog extends JDialog {
         txtHoTen.setText(currentNv.getHoTen());
         txtEmail.setText(currentNv.getEmail());
         txtSdt.setText(currentNv.getSdt());
-        txtLuong.setText(String.valueOf(currentNv.getLuong()));
 
         String cv = currentNv.getChucVu();
-        if (cv != null && (cv.equalsIgnoreCase("Admin") || cv.equalsIgnoreCase("Quản lý"))) {
+        if (cv != null && (cv.equalsIgnoreCase("Quản lý"))) {
             cbChucVu.setSelectedIndex(0);
         } else {
             cbChucVu.setSelectedIndex(1);
@@ -146,33 +144,28 @@ public class NhanVienDialog extends JDialog {
             String hoTen = txtHoTen.getText().trim();
             String email = txtEmail.getText().trim();
             String sdt = txtSdt.getText().trim();
-            String luongStr = txtLuong.getText().trim();
             String ngayVaoLamStr = txtNgayVaoLam.getText().trim();
 
-            if (hoTen.isEmpty() || email.isEmpty() || sdt.isEmpty() || luongStr.isEmpty() || ngayVaoLamStr.isEmpty()) {
+            if (hoTen.isEmpty() || email.isEmpty() || sdt.isEmpty() || ngayVaoLamStr.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin!", "Lỗi",
                         JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            long luong = Long.parseLong(luongStr);
             int maVaiTro = cbChucVu.getSelectedIndex() == 0 ? 1 : 2;
 
             currentNv.setHoTen(hoTen);
             currentNv.setEmail(email);
             currentNv.setSdt(sdt);
-            currentNv.setLuong(luong);
             currentNv.setChucVu(cbChucVu.getSelectedItem().toString());
 
-            boolean success;
+            boolean success = false;
             if (isEditMode) {
-                success = dao.updateNhanVien(currentNv, maVaiTro);
+                success = dao.updateNhanVien(currentNv);
             } else {
                 SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
                 currentNv.setNgayVaoLam(sdf.parse(ngayVaoLamStr));
 
-                // Gán mặc định Cửa hàng 1 và không có tài khoản (NULL)
-                success = dao.addNhanVien(currentNv, 1, maVaiTro, null, null);
             }
 
             if (success) {

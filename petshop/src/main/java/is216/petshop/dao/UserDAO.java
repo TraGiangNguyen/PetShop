@@ -25,4 +25,48 @@ public class UserDAO {
             return false;
         }
     }
+
+    public String getUserRole(String username) {
+        String sql = "SELECT nv.CHUCVU FROM TAI_KHOAN_NHAN_VIEN tk " +
+                     "JOIN nhan_vien nv ON tk.MANHANVIEN = nv.MANHANVIEN " +
+                     "WHERE tk.USERNAME = ?";
+        try (Connection conn = DBConnection.getConnection()) {
+            if (conn == null) return "";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, username);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getString("CHUCVU");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    public is216.petshop.model.NhanVienModel getNhanVienByUsername(String username) {
+        String sql = "SELECT nv.* FROM TAI_KHOAN_NHAN_VIEN tk " +
+                     "JOIN nhan_vien nv ON tk.MANHANVIEN = nv.MANHANVIEN " +
+                     "WHERE tk.USERNAME = ?";
+        try (Connection conn = DBConnection.getConnection()) {
+            if (conn == null) return null;
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, username);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                is216.petshop.model.NhanVienModel nv = new is216.petshop.model.NhanVienModel();
+                nv.setMaNhanVien(rs.getInt("MANHANVIEN"));
+                nv.setHoTen(rs.getString("HOTEN"));
+                nv.setChucVu(rs.getString("CHUCVU"));
+                nv.setSdt(rs.getString("SDT"));
+                nv.setEmail(rs.getString("EMAIL"));
+                nv.setNgayVaoLam(rs.getDate("NGAYVAOLAM"));
+                nv.setTrangThai(rs.getString("TRANGTHAI"));
+                return nv;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 }

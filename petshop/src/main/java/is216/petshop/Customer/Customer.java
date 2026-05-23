@@ -1,4 +1,4 @@
-package is216.petshop.model;
+package is216.petshop.Customer;
 
 import java.util.Date;
 

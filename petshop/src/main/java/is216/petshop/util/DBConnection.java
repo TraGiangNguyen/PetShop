@@ -16,7 +16,7 @@ public class DBConnection {
         try {
             String url = "jdbc:mysql://localhost:3306/petstore";
             String user = "root";
-            String password = "";
+            String password = "123456";
 
             Connection conn = DriverManager.getConnection(url, user, password);
             System.out.println("✅ Connected successfully!");
