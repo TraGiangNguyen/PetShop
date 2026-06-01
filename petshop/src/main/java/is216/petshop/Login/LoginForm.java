@@ -75,7 +75,7 @@ public class LoginForm extends JFrame {
         // Sửa ở đây: Giới hạn chiều rộng ở mức 300 thay vì Integer.MAX_VALUE
         txtUsername.setMaximumSize(new Dimension(formWidth, 48)); 
         txtUsername.putClientProperty(FlatClientProperties.STYLE,
-                "arc: 12; borderWidth: 1.5; focusedBorderColor: #5B5BD6; hoverBorderColor: #9898E0; " +
+                "arc: 12; borderWidth: 1.5; " +
                 "background: #FFFFFF; foreground: #1e1e32;");
         // Sửa ở đây: Căn giữa
         txtUsername.setAlignmentX(Component.CENTER_ALIGNMENT); 
@@ -101,7 +101,7 @@ public class LoginForm extends JFrame {
         // Sửa ở đây
         txtPassword.setMaximumSize(new Dimension(formWidth, 48)); 
         txtPassword.putClientProperty(FlatClientProperties.STYLE,
-                "arc: 12; borderWidth: 1.5; focusedBorderColor: #5B5BD6; hoverBorderColor: #9898E0; " +
+                "arc: 12; borderWidth: 1.5; " +
                 "background: #FFFFFF; foreground: #1e1e32;");
         txtPassword.putClientProperty(FlatClientProperties.STYLE_CLASS, "passwordField");
         // Sửa ở đây

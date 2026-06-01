@@ -20,12 +20,18 @@ import java.awt.geom.*;
 public class MainFrame extends JFrame {
     private JPanel pnlSidebar;
     private JPanel pnlContent; // Vùng chứa nội dung chính
+    private JButton btnDashboard;
     private JButton btnSales;
     private JButton btnCustomer;
     private JButton btnService; // Dịch vụ
     private JButton btnProduct;
+    private JButton btnProductCRUD;
     private JButton btnInvoice;
     private JButton btnEmployee;
+    private JButton btnAttendance;
+    private JButton btnLeave;
+    private JButton btnPayroll;
+    private JButton btnPurchase;
     private JButton btnLogout;
     private boolean isManager = true;
     private String username;
@@ -39,13 +45,13 @@ public class MainFrame extends JFrame {
         this.isManager = isManager;
         initComponents(username); 
         setLocationRelativeTo(null); 
-        // Hiển thị thẻ mặc định là Bán hàng
-        btnSalesActionPerformed();
+        // Hiển thị thẻ mặc định là Tổng quan (Dashboard)
+        btnDashboardActionPerformed();
     }
     
     private void initComponents(String username) {
         setTitle("Pet Store - Quản lý cửa hàng");
-        setSize(1200, 700);
+        setSize(1200, 780);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
@@ -61,44 +67,68 @@ public class MainFrame extends JFrame {
         JPanel pnlMenu = new JPanel();
         pnlMenu.setOpaque(false); // Làm trong suốt để lộ nền tím
         pnlMenu.setLayout(new BoxLayout(pnlMenu, BoxLayout.Y_AXIS));
-        pnlMenu.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
+        pnlMenu.setBorder(BorderFactory.createEmptyBorder(15, 10, 15, 10));
 
         // Tiêu đề/Logo
         JLabel lblLogo = new JLabel("<html><b style='font-family:\"Segoe UI Emoji\"; font-size:18px'>\uD83D\uDC3E Pet Store</b><br>Quản lý cửa hàng</html>");
         lblLogo.setForeground(Color.WHITE);
-        lblLogo.setBorder(BorderFactory.createEmptyBorder(0, 0, 40, 0));
+        lblLogo.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
+        lblLogo.setAlignmentX(Component.LEFT_ALIGNMENT);
         pnlMenu.add(lblLogo);
 
         // Khởi tạo các nút Menu với icon vẽ bằng Graphics2D
-        // Khởi tạo các nút Menu với icon vẽ bằng Graphics2D
+        btnDashboard = createMenuButton("Tổng quan", "dashboard");
         btnSales = createMenuButton("B\u00e1n h\u00e0ng", "cart");
         btnCustomer = createMenuButton("Kh\u00e1ch h\u00e0ng", "person");
-        btnService = createMenuButton("D\u1ecbch v\u1ee5", "calendar");
+        btnService = createMenuButton("\u0110\u1eb7t l\u1ecbch", "calendar");
         btnProduct = createMenuButton("Kho hàng", "box");
+        btnProductCRUD = createMenuButton("S\u1ea3n ph\u1ea9m & D\u1ecbch v\u1ee5", "tag");
         btnInvoice = createMenuButton("H\u00f3a \u0111\u01a1n", "document");
         btnEmployee = createMenuButton("Nh\u00e2n vi\u00ean", "people");
+        btnAttendance = createMenuButton("Ch\u1ea5m c\u00f4ng", "attendance");
+        btnLeave = createMenuButton("Ngh\u1ec9 ph\u00e9p", "leave");
+        btnPayroll = createMenuButton("B\u1ea3ng l\u01b0\u01a1ng", "payroll");
+        btnPurchase = createMenuButton("Mua hàng", "bag");
 
         // Yêu cầu các nút lắng nghe sự kiện click chuột
+        btnDashboard.addActionListener(e -> btnDashboardActionPerformed());
         btnProduct.addActionListener(e -> btnProductActionPerformed());
+        btnProductCRUD.addActionListener(e -> btnProductCRUDActionPerformed());
         btnSales.addActionListener(e -> btnSalesActionPerformed());
         btnCustomer.addActionListener(e -> btnCustomerActionPerformed());
         btnService.addActionListener(e -> btnServiceActionPerformed());
         btnInvoice.addActionListener(e -> btnInvoiceActionPerformed());
         btnEmployee.addActionListener(e -> btnEmployeeActionPerformed());
+        btnAttendance.addActionListener(e -> btnAttendanceActionPerformed());
+        btnLeave.addActionListener(e -> btnLeaveActionPerformed());
+        btnPayroll.addActionListener(e -> btnPayrollActionPerformed());
+        btnPurchase.addActionListener(e -> btnPurchaseActionPerformed());
         
-        // Thêm các nút vào panel, chèn khoảng trống 10px giữa các nút
+        // Thêm các nút vào panel, chèn khoảng trống 6px giữa các nút
+        pnlMenu.add(btnDashboard);
+        pnlMenu.add(Box.createRigidArea(new Dimension(0, 6)));
         pnlMenu.add(btnSales);
-        pnlMenu.add(Box.createRigidArea(new Dimension(0, 10)));
+        pnlMenu.add(Box.createRigidArea(new Dimension(0, 6)));
         pnlMenu.add(btnCustomer);
-        pnlMenu.add(Box.createRigidArea(new Dimension(0, 10)));
+        pnlMenu.add(Box.createRigidArea(new Dimension(0, 6)));
         pnlMenu.add(btnService);
-        pnlMenu.add(Box.createRigidArea(new Dimension(0, 10)));
+        pnlMenu.add(Box.createRigidArea(new Dimension(0, 6)));
         pnlMenu.add(btnInvoice);
+        pnlMenu.add(Box.createRigidArea(new Dimension(0, 6)));
+        pnlMenu.add(btnAttendance);
+        pnlMenu.add(Box.createRigidArea(new Dimension(0, 6)));
+        pnlMenu.add(btnLeave);
         if (isManager) {
-            pnlMenu.add(Box.createRigidArea(new Dimension(0, 10)));
+            pnlMenu.add(Box.createRigidArea(new Dimension(0, 6)));
+            pnlMenu.add(btnProductCRUD);
+            pnlMenu.add(Box.createRigidArea(new Dimension(0, 6)));
             pnlMenu.add(btnProduct);
-            pnlMenu.add(Box.createRigidArea(new Dimension(0, 10)));
+            pnlMenu.add(Box.createRigidArea(new Dimension(0, 6)));
+            pnlMenu.add(btnPurchase);
+            pnlMenu.add(Box.createRigidArea(new Dimension(0, 6)));
             pnlMenu.add(btnEmployee);
+            pnlMenu.add(Box.createRigidArea(new Dimension(0, 6)));
+            pnlMenu.add(btnPayroll);
         }
 
         pnlSidebar.add(pnlMenu, BorderLayout.NORTH);
@@ -107,7 +137,7 @@ public class MainFrame extends JFrame {
         JPanel pnlBottom = new JPanel();
         pnlBottom.setOpaque(false);
         pnlBottom.setLayout(new BoxLayout(pnlBottom, BoxLayout.Y_AXIS));
-        pnlBottom.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        pnlBottom.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
         // Container row for beautiful UserButton & interactive text greeting
         JPanel pnlUserRow = new JPanel();
@@ -157,7 +187,7 @@ public class MainFrame extends JFrame {
         pnlUserText.addMouseListener(showProfileAdapter);
 
         pnlBottom.add(pnlUserRow);
-        pnlBottom.add(Box.createRigidArea(new Dimension(0, 15)));
+        pnlBottom.add(Box.createRigidArea(new Dimension(0, 8)));
 
         btnLogout = createMenuButton("\u0110\u0103ng xu\u1ea5t", "logout");
         btnLogout.addActionListener(e -> {
@@ -190,12 +220,13 @@ public class MainFrame extends JFrame {
         btn.setIconTextGap(10);
         btn.setForeground(Color.WHITE);
         btn.setBackground(new Color(60, 45, 130));
-        btn.setFont(new Font("Segoe UI", Font.PLAIN, 15));
-        btn.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        btn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        btn.setBorder(BorderFactory.createEmptyBorder(7, 10, 7, 10));
         btn.setFocusPainted(false);
         btn.setHorizontalAlignment(SwingConstants.LEFT);
-        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setAlignmentX(Component.LEFT_ALIGNMENT);
         
         // Hiệu ứng Hover đơn giản
         btn.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -220,6 +251,16 @@ public class MainFrame extends JFrame {
         g.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 
         switch (type) {
+            case "tag": // Price tag icon for products
+                g.drawPolygon(new int[]{4, 10, 16, 10, 4}, new int[]{8, 2, 8, 14, 14}, 5);
+                g.fillOval(7, 7, 3, 3);
+                break;
+            case "dashboard": // Tổng quan
+                g.drawRect(2, 2, 6, 6);
+                g.drawRect(10, 2, 6, 6);
+                g.drawRect(2, 10, 6, 6);
+                g.drawRect(10, 10, 6, 6);
+                break;
             case "cart": // Giỏ hàng
                 g.drawRect(4, 3, 10, 8);
                 g.drawLine(4, 3, 2, 0);
@@ -260,6 +301,26 @@ public class MainFrame extends JFrame {
                 g.drawLine(6, 1, 6, 4);
                 g.drawLine(12, 1, 12, 4);
                 break;
+            case "attendance":
+                g.drawOval(2, 2, 14, 14);
+                g.drawLine(9, 9, 9, 5);
+                g.drawLine(9, 9, 12, 9);
+                break;
+            case "leave":
+                g.drawRect(3, 2, 10, 14);
+                g.drawLine(6, 6, 10, 6);
+                g.drawLine(6, 10, 10, 10);
+                g.drawLine(15, 2, 13, 5);
+                break;
+            case "payroll":
+                g.drawRect(2, 4, 14, 10);
+                g.drawLine(2, 8, 16, 8);
+                g.drawOval(7, 5, 4, 4);
+                break;
+            case "bag":
+                g.drawRect(4, 5, 10, 10);
+                g.drawArc(6, 2, 6, 6, 0, 180);
+                break;
         }
         g.dispose();
         return new ImageIcon(img);
@@ -285,6 +346,10 @@ public class MainFrame extends JFrame {
     private void btnProductActionPerformed() {                                          
         showPanel(new StockPanel(this.username));
     }
+    
+    private void btnProductCRUDActionPerformed() {                                          
+        showPanel(new is216.petshop.Product.ProductPanel());
+    }
 
     private void btnCustomerActionPerformed() {                                          
         showPanel(new Customerpanel());
@@ -298,5 +363,25 @@ public class MainFrame extends JFrame {
         BookingPanel bookingPanel = new BookingPanel();
         new BookingController(bookingPanel);
         showPanel(bookingPanel);
+    }
+
+    private void btnAttendanceActionPerformed() {
+        showPanel(new AttendancePanel(this.username));
+    }
+
+    private void btnLeaveActionPerformed() {
+        showPanel(new LeavePanel(this.username));
+    }
+
+    private void btnPayrollActionPerformed() {
+        showPanel(new PayrollPanel());
+    }
+
+    private void btnDashboardActionPerformed() {
+        showPanel(new DashboardPanel());
+    }
+    
+    private void btnPurchaseActionPerformed() {
+        showPanel(new PurchasePanel(this.username));
     }
 }

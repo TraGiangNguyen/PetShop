@@ -11,10 +11,10 @@ import java.util.Map;
 /**
  * DAO – reads/writes LICH_HEN and CHI_TIET_LICH_HEN (MySQL).
  *
- * Schema (MySQL adaptation of the Oracle reference):
+ * Schema (MySQL adaptation matching IS201 standard):
  *
- *   LICH_HEN       (MALICHHEN PK AI, MAKH FK, MATHUCUNG FK, THOIGIANHEN, TRANGTHAI, MANV)
- *   CHI_TIET_LICH_HEN (MALICHHEN, MAKH, MADICHVU, GHICHU)  PK(MALICHHEN, MADICHVU)
+ *   LICH_HEN       (MALICHHEN PK AI, MADOITAC FK, MATHUCUNG FK, THOIGIANHEN, TRANGTHAI, MANV)
+ *   CHI_TIET_LICH_HEN (MALICHHEN, MADOITAC, MADICHVU, GHICHU)  PK(MALICHHEN, MADICHVU)
  *   DICH_VU        (MADICHVU PK AI, TENDICHVU, GIA, COTHEBAN)
  *   DOI_TAC        (MADOITAC, TENDOITAC, SODIENTHOAI, …)
  *   KHACH_HANG     (MADOITAC PK FK→DOI_TAC, DIEMTICHLUY, …)
@@ -23,41 +23,45 @@ import java.util.Map;
 public class BookingDAO {
 
     // ─────────────────────────────────────────────────────────────────────────
-    // DDL – ensure tables exist (MySQL syntax)
+    // DDL – ensure tables exist (MySQL syntax matching IS201)
     // ─────────────────────────────────────────────────────────────────────────
     public void ensureTablesExist() {
         String[] ddl = {
             "CREATE TABLE IF NOT EXISTS HO_SO_THU_CUNG (" +
             "  MATHUCUNG  INT AUTO_INCREMENT PRIMARY KEY," +
-            "  MAKH       INT NOT NULL," +
+            "  MADOITAC   INT NOT NULL," +
             "  TENTHUCUNG VARCHAR(255) NOT NULL," +
             "  LOAITHUCUNG VARCHAR(100)," +
             "  GIOITINH    VARCHAR(10)," +
             "  NGAYSINH    DATE," +
             "  TRANGTHAI   VARCHAR(50)," +
-            "  FOREIGN KEY (MAKH) REFERENCES KHACH_HANG(MAKH)" +
-            ")",
+            "  FOREIGN KEY (MADOITAC) REFERENCES KHACH_HANG(MADOITAC)" +
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
             "CREATE TABLE IF NOT EXISTS LICH_HEN (" +
             "  MALICHHEN  INT AUTO_INCREMENT PRIMARY KEY," +
-            "  MAKH       INT NOT NULL," +
+            "  MADOITAC   INT NOT NULL," +
             "  MATHUCUNG  INT," +
             "  THOIGIANHEN DATETIME," +
             "  TRANGTHAI  VARCHAR(100) DEFAULT 'Đợi check-in'," +
-            "  MANV       INT" +
-            ")",
-            "CREATE TABLE IF NOT EXISTS CHI_TIET_LICH_HEN (" +
-            "  MALICHHEN INT NOT NULL," +
-            "  MAKH      INT NOT NULL," +
-            "  MADICHVU  INT NOT NULL," +
-            "  GHICHU    VARCHAR(500)," +
-            "  PRIMARY KEY(MALICHHEN, MADICHVU)" +
-            ")",
+            "  MANV       INT," +
+            "  FOREIGN KEY (MADOITAC) REFERENCES KHACH_HANG(MADOITAC)," +
+            "  FOREIGN KEY (MATHUCUNG) REFERENCES HO_SO_THU_CUNG(MATHUCUNG)" +
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
             "CREATE TABLE IF NOT EXISTS DICH_VU (" +
             "  MADICHVU  INT AUTO_INCREMENT PRIMARY KEY," +
             "  TENDICHVU VARCHAR(255) NOT NULL," +
             "  GIA       DECIMAL(18,2) DEFAULT 0," +
             "  COTHEBAN  TINYINT(1) DEFAULT 1" +
-            ")"
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+            "CREATE TABLE IF NOT EXISTS CHI_TIET_LICH_HEN (" +
+            "  MALICHHEN INT NOT NULL," +
+            "  MADOITAC  INT NOT NULL," +
+            "  MADICHVU  INT NOT NULL," +
+            "  GHICHU    VARCHAR(500)," +
+            "  PRIMARY KEY(MALICHHEN, MADICHVU)," +
+            "  FOREIGN KEY (MALICHHEN) REFERENCES LICH_HEN(MALICHHEN) ON DELETE CASCADE," +
+            "  FOREIGN KEY (MADICHVU) REFERENCES DICH_VU(MADICHVU)" +
+            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         };
         try (Connection conn = DBConnection.getConnection();
              Statement st = conn.createStatement()) {
@@ -188,7 +192,7 @@ public class BookingDAO {
     /** Returns a map of MATHUCUNG → TENTHUCUNG for the given customer. */
     public Map<Integer, String> getPetsByCustomer(int maKh) {
         Map<Integer, String> map = new LinkedHashMap<>();
-        // HO_SO_THU_CUNG uses MAKH as the FK to KHACH_HANG (MySQL schema)
+        // HO_SO_THU_CUNG uses MAKH as the FK to KHACH_HANG
         String sql = "SELECT MATHUCUNG, TENTHUCUNG, LOAITHUCUNG " +
                      "FROM HO_SO_THU_CUNG WHERE MAKH = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -216,49 +220,52 @@ public class BookingDAO {
      */
     public List<Booking> search(String filter) {
         List<Booking> list = new ArrayList<>();
-        // Join KHACH_HANG directly (MySQL schema uses flat table, no DOI_TAC split)
+        // Join KHACH_HANG, DOI_TAC, and NHAN_VIEN matching the IS201 schema
         String sql =
             "SELECT lh.MALICHHEN, lh.MAKH, lh.MATHUCUNG, lh.THOIGIANHEN, " +
             "       lh.TRANGTHAI, lh.MANV, " +
-            "       kh.TENKH AS TENKH, kh.SODIENTHOAI, " +
-            "       tc.TENTHUCUNG, tc.LOAITHUCUNG " +
+            "       kh.TENKH, kh.SODIENTHOAI, " +
+            "       tc.TENTHUCUNG, tc.LOAITHUCUNG, " +
+            "       nv.HOTEN AS TENNV " +
             "FROM   LICH_HEN lh " +
             "  JOIN KHACH_HANG kh ON kh.MAKH = lh.MAKH " +
             "  LEFT JOIN HO_SO_THU_CUNG tc ON tc.MATHUCUNG = lh.MATHUCUNG " +
-            "WHERE  lh.TRANGTHAI IN ('Đợi check-in', 'Đang thực hiện') " +
-            "ORDER BY lh.THOIGIANHEN ASC";
+            "  LEFT JOIN NHAN_VIEN nv ON nv.MANHANVIEN = lh.MANV " +
+            "ORDER BY lh.MALICHHEN DESC";
 
         try (Connection conn = DBConnection.getConnection();
              Statement st = conn.createStatement();
              ResultSet rs = st.executeQuery(sql)) {
 
-            String lower = (filter == null) ? "" : filter.toLowerCase().trim();
-            while (rs.next()) {
-                Booking b = mapRow(rs);
-                // Load child services
-                b.setServices(loadServices(conn, b.getMaLichHen(), b.getMaKh()));
-                if (lower.isEmpty() || matches(b, lower)) {
-                    list.add(b);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return list;
-    }
+             String lower = (filter == null) ? "" : filter.toLowerCase().trim();
+             while (rs.next()) {
+                 Booking b = mapRow(rs);
+                 // Load child services
+                 b.setServices(loadServices(conn, b.getMaLichHen(), b.getMaKh()));
+                 if (lower.isEmpty() || matches(b, lower)) {
+                     list.add(b);
+                 }
+             }
+         } catch (Exception e) {
+             e.printStackTrace();
+         }
+         return list;
+     }
 
-    public List<Booking> getBookingsByStatus(String status) {
-        List<Booking> list = new ArrayList<>();
-        String sql =
-            "SELECT lh.MALICHHEN, lh.MAKH, lh.MATHUCUNG, lh.THOIGIANHEN, " +
-            "       lh.TRANGTHAI, lh.MANV, " +
-            "       kh.TENKH AS TENKH, kh.SODIENTHOAI, " +
-            "       tc.TENTHUCUNG, tc.LOAITHUCUNG " +
-            "FROM   LICH_HEN lh " +
-            "  JOIN KHACH_HANG kh ON kh.MAKH = lh.MAKH " +
-            "  LEFT JOIN HO_SO_THU_CUNG tc ON tc.MATHUCUNG = lh.MATHUCUNG " +
-            "WHERE  lh.TRANGTHAI = ? " +
-            "ORDER BY lh.THOIGIANHEN ASC";
+     public List<Booking> getBookingsByStatus(String status) {
+         List<Booking> list = new ArrayList<>();
+         String sql =
+             "SELECT lh.MALICHHEN, lh.MAKH, lh.MATHUCUNG, lh.THOIGIANHEN, " +
+             "       lh.TRANGTHAI, lh.MANV, " +
+             "       kh.TENKH, kh.SODIENTHOAI, " +
+             "       tc.TENTHUCUNG, tc.LOAITHUCUNG, " +
+             "       nv.HOTEN AS TENNV " +
+             "FROM   LICH_HEN lh " +
+             "  JOIN KHACH_HANG kh ON kh.MAKH = lh.MAKH " +
+             "  LEFT JOIN HO_SO_THU_CUNG tc ON tc.MATHUCUNG = lh.MATHUCUNG " +
+             "  LEFT JOIN NHAN_VIEN nv ON nv.MANHANVIEN = lh.MANV " +
+             "WHERE  lh.TRANGTHAI = ? " +
+             "ORDER BY lh.THOIGIANHEN ASC";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -366,6 +373,60 @@ public class BookingDAO {
         }
     }
 
+    public boolean updateStaff(int maLichHen, Integer maNv) {
+        String sql = "UPDATE LICH_HEN SET MANV = ? WHERE MALICHHEN = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            if (maNv != null) {
+                ps.setInt(1, maNv);
+            } else {
+                ps.setNull(1, Types.INTEGER);
+            }
+            ps.setInt(2, maLichHen);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean addServiceToBooking(int maLichHen, int maKh, int maDichVu, String ghiChu) {
+        String sql = "INSERT INTO CHI_TIET_LICH_HEN (MALICHHEN, MAKH, MADICHVU, GHICHU) VALUES (?, ?, ?, ?)";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, maLichHen);
+            ps.setInt(2, maKh);
+            ps.setInt(3, maDichVu);
+            ps.setString(4, ghiChu);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean removeServiceFromBooking(int maLichHen, int maDichVu) {
+        String sql = "DELETE FROM CHI_TIET_LICH_HEN WHERE MALICHHEN = ? AND MADICHVU = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, maLichHen);
+            ps.setInt(2, maDichVu);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public List<BookingServiceLine> getServicesForBooking(int maLichHen, int maKh) {
+        try (Connection conn = DBConnection.getConnection()) {
+            return loadServices(conn, maLichHen, maKh);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // PRIVATE HELPERS
     // ─────────────────────────────────────────────────────────────────────────
@@ -380,11 +441,17 @@ public class BookingDAO {
         Object nv = rs.getObject("MANV");
         b.setMaNv(nv != null ? rs.getInt("MANV") : null);
 
-        // KHACH_HANG uses TENKH (MySQL flat table, no DOI_TAC split)
         b.setTenKhachHang(rs.getString("TENKH"));
         b.setSoDienThoai(rs.getString("SODIENTHOAI"));
         b.setTenThuCung(rs.getString("TENTHUCUNG"));
         b.setLoaiThuCung(rs.getString("LOAITHUCUNG"));
+        
+        try {
+            b.setTenNhanVien(rs.getString("TENNV"));
+        } catch (SQLException e) {
+            // Field might not be in the query, bypass
+            b.setTenNhanVien(null);
+        }
         return b;
     }
 
@@ -417,7 +484,21 @@ public class BookingDAO {
         return (b.getTenKhachHang() != null && b.getTenKhachHang().toLowerCase().contains(lower))
             || (b.getSoDienThoai() != null  && b.getSoDienThoai().toLowerCase().contains(lower))
             || (b.getTenThuCung()  != null  && b.getTenThuCung().toLowerCase().contains(lower))
+            || (b.getTenNhanVien()  != null && b.getTenNhanVien().toLowerCase().contains(lower))
             || b.getServicesSummary().toLowerCase().contains(lower);
+    }
+
+    public boolean insertService(String tenDichVu, double gia) {
+        String sql = "INSERT INTO DICH_VU (TENDICHVU, GIA, COTHEBAN) VALUES (?, ?, 1)";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, tenDichVu);
+            ps.setDouble(2, gia);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     private String nvl(String s) { return s != null ? s : ""; }

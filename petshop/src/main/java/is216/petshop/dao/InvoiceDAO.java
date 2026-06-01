@@ -138,11 +138,11 @@ public class InvoiceDAO {
 
     public java.util.List<PendingOrder> getPendingOrders() {
         java.util.List<PendingOrder> list = new java.util.ArrayList<>();
-        String sql = "SELECT d.MADONHANG, d.NGAYTAO, d.TONGTIENTAMTINH, d.MAKH, d.GHICHU, " +
-                     "       k.TENKH AS TENKH, k.SODIENTHOAI AS SDTKH, " +
+        String sql = "SELECT d.MADONHANG, d.NGAYTAO, d.TONGTIENTAMTINH, d.MADOITAC as MAKH, d.GHICHU, " +
+                     "       dt.TENDOITAC AS TENKH, dt.SODIENTHOAI AS SDTKH, " +
                      "       n.HOTEN AS TENNV " +
                      "FROM don_hang d " +
-                     "LEFT JOIN khach_hang k ON d.MAKH = k.MAKH " +
+                     "LEFT JOIN doi_tac dt ON d.MADOITAC = dt.MADOITAC " +
                      "LEFT JOIN nhan_vien n ON d.MANHANVIEN = n.MANHANVIEN " +
                      "WHERE d.TRANGTHAI = 'Chờ thanh toán' " +
                      "ORDER BY d.NGAYTAO DESC";

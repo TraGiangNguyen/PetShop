@@ -56,7 +56,7 @@ public class NhanVienDialog extends JDialog {
 
         // Row 1: Họ tên & Chức vụ
         txtHoTen = createField(formPanel, "HỌ TÊN", "Nhập họ và tên");
-        String[] vaitro = { "Quản lý", "Nhân viên bán hàng" };
+        String[] vaitro = { "Quản lý", "Nhân viên bán hàng", "Nhân viên dịch vụ", "Nhân viên kho" };
         cbChucVu = createCombo(formPanel, "CHỨC VỤ", vaitro);
 
         // Row 2: Email & SĐT
@@ -132,10 +132,13 @@ public class NhanVienDialog extends JDialog {
         txtSdt.setText(currentNv.getSdt());
 
         String cv = currentNv.getChucVu();
-        if (cv != null && (cv.equalsIgnoreCase("Quản lý"))) {
-            cbChucVu.setSelectedIndex(0);
-        } else {
-            cbChucVu.setSelectedIndex(1);
+        if (cv != null) {
+            for (int i = 0; i < cbChucVu.getItemCount(); i++) {
+                if (cbChucVu.getItemAt(i).equalsIgnoreCase(cv)) {
+                    cbChucVu.setSelectedIndex(i);
+                    break;
+                }
+            }
         }
     }
 
@@ -152,8 +155,6 @@ public class NhanVienDialog extends JDialog {
                 return;
             }
 
-            int maVaiTro = cbChucVu.getSelectedIndex() == 0 ? 1 : 2;
-
             currentNv.setHoTen(hoTen);
             currentNv.setEmail(email);
             currentNv.setSdt(sdt);
@@ -165,7 +166,8 @@ public class NhanVienDialog extends JDialog {
             } else {
                 SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
                 currentNv.setNgayVaoLam(sdf.parse(ngayVaoLamStr));
-
+                currentNv.setTrangThai("Đang làm việc"); // set active status for new employee
+                success = dao.addNhanVien(currentNv, "", ""); // trigger handles auto account creation
             }
 
             if (success) {

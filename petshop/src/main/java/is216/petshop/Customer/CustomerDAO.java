@@ -98,5 +98,80 @@ public class CustomerDAO {
         c.setJoinDate(rs.getDate("NGAYBATDAU"));
         return c;
     }
+
+    // --- PET PROFILE INTEGRATION ---
+
+    public static class Pet {
+        private int id;
+        private int customerId;
+        private String name;
+        private String type;
+        private String gender;
+
+        public Pet() {}
+
+        public Pet(int id, int customerId, String name, String type, String gender) {
+            this.id = id;
+            this.customerId = customerId;
+            this.name = name;
+            this.type = type;
+            this.gender = gender;
+        }
+
+        public int getId() { return id; }
+        public void setId(int id) { this.id = id; }
+        public int getCustomerId() { return customerId; }
+        public void setCustomerId(int customerId) { this.customerId = customerId; }
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+        public String getType() { return type; }
+        public void setType(String type) { this.type = type; }
+        public String getGender() { return gender; }
+        public void setGender(String gender) { this.gender = gender; }
+    }
+
+    public ArrayList<Pet> getPetsByCustomerId(int customerId) {
+        ArrayList<Pet> pets = new ArrayList<>();
+        String sql = "SELECT MATHUCUNG, MAKH, TENTHUCUNG, LOAITHUCUNG, GIOITINH FROM HO_SO_THU_CUNG WHERE MAKH = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, customerId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    pets.add(new Pet(
+                        rs.getInt("MATHUCUNG"),
+                        rs.getInt("MAKH"),
+                        rs.getString("TENTHUCUNG"),
+                        rs.getString("LOAITHUCUNG"),
+                        rs.getString("GIOITINH")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return pets;
+    }
+
+    public boolean insertPet(int customerId, String name, String type, String gender) throws SQLException {
+        String sql = "INSERT INTO HO_SO_THU_CUNG (MAKH, TENTHUCUNG, LOAITHUCUNG, GIOITINH) VALUES (?, ?, ?, ?)";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, customerId);
+            ps.setString(2, name);
+            ps.setString(3, type);
+            ps.setString(4, gender);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    public boolean deletePet(int petId) throws SQLException {
+        String sql = "DELETE FROM HO_SO_THU_CUNG WHERE MATHUCUNG = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, petId);
+            return ps.executeUpdate() > 0;
+        }
+    }
 }
 

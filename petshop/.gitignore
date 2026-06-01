@@ -1,1 +1,5 @@
 src/main/java/is216/petshop/util/DBConnection.java
+target/
+.vscode/
+db_error.txt
+src/main/java/is216/IS201-Information-System-Analysis-and-Design/

@@ -28,6 +28,9 @@ public class Booking {
     private String    tenThuCung;
     private String    loaiThuCung;
 
+    // ── Joined from NHANVIEN ──────────────────────────────────────────────────
+    private String    tenNhanVien;
+
     // ── From CHI_TIET_LICH_HEN (may be multiple rows) ────────────────────────
     private List<BookingServiceLine> services = new ArrayList<>();
 
@@ -65,6 +68,9 @@ public class Booking {
     public String    getLoaiThuCung()    { return loaiThuCung; }
     public void      setLoaiThuCung(String v) { this.loaiThuCung = v; }
 
+    public String    getTenNhanVien()    { return tenNhanVien; }
+    public void      setTenNhanVien(String v) { this.tenNhanVien = v; }
+
     public List<BookingServiceLine> getServices()         { return services; }
     public void setServices(List<BookingServiceLine> svc) { this.services = svc; }
 
@@ -82,5 +88,14 @@ public class Booking {
             sb.append(s.getTenDichVu());
         }
         return sb.toString();
+    }
+
+    /** Calculate total amount of the booking services */
+    public double getTongTien() {
+        double total = 0;
+        for (BookingServiceLine s : services) {
+            total += s.getGia();
+        }
+        return total;
     }
 }

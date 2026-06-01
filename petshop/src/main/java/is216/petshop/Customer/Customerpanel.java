@@ -128,8 +128,8 @@ public class Customerpanel extends JPanel {
 
     private void buildTable(JPanel card) {
         model = new DefaultTableModel(
-            new Object[]{"Mã", "Khách hàng", "Liên hệ", "Địa chỉ", "Phân loại", "Ngày tham gia", "Điểm", "Hạng", "Thao tác"}, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return c == 8; }
+            new Object[]{"Khách hàng", "Liên hệ", "Phân loại", "Ngày tham gia", "Điểm", "Hạng", "Thao tác"}, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return c == 6; }
         };
 
         table = new JTable(model);
@@ -152,25 +152,22 @@ public class Customerpanel extends JPanel {
         hdr.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER));
         hdr.setDefaultRenderer(new HdrRender());
 
-        table.getColumnModel().getColumn(0).setPreferredWidth(60);   // Mã
-        table.getColumnModel().getColumn(1).setPreferredWidth(200);  // Khách hàng
-        table.getColumnModel().getColumn(2).setPreferredWidth(180);  // Liên hệ
-        table.getColumnModel().getColumn(3).setPreferredWidth(250);  // Địa chỉ
-        table.getColumnModel().getColumn(4).setPreferredWidth(120);  // Phân loại
-        table.getColumnModel().getColumn(5).setPreferredWidth(120);  // Ngày tham gia
-        table.getColumnModel().getColumn(6).setPreferredWidth(80);   // Điểm
-        table.getColumnModel().getColumn(7).setPreferredWidth(100);  // Hạng
-        table.getColumnModel().getColumn(8).setPreferredWidth(100);  // Thao tác
+        table.getColumnModel().getColumn(0).setPreferredWidth(200);  // Khách hàng
+        table.getColumnModel().getColumn(1).setPreferredWidth(180);  // Liên hệ
+        table.getColumnModel().getColumn(2).setPreferredWidth(130);  // Phân loại
+        table.getColumnModel().getColumn(3).setPreferredWidth(140);  // Ngày tham gia
+        table.getColumnModel().getColumn(4).setPreferredWidth(90);   // Điểm
+        table.getColumnModel().getColumn(5).setPreferredWidth(100);  // Hạng
+        table.getColumnModel().getColumn(6).setPreferredWidth(120);  // Thao tác
 
-        table.getColumnModel().getColumn(0).setCellRenderer(new IdRender());
-        table.getColumnModel().getColumn(1).setCellRenderer(new NameRender());
-        table.getColumnModel().getColumn(2).setCellRenderer(new ContactRender());
-        table.getColumnModel().getColumn(3).setCellRenderer(new AddrRender());
-        table.getColumnModel().getColumn(4).setCellRenderer(new TypeBadgeRender());
-        table.getColumnModel().getColumn(6).setCellRenderer(new PointRender());
-        table.getColumnModel().getColumn(7).setCellRenderer(new RankRender());
-        table.getColumnModel().getColumn(8).setCellRenderer(new ActRender());
-        table.getColumnModel().getColumn(8).setCellEditor(new ActEditor());
+        table.getColumnModel().getColumn(0).setCellRenderer(new NameRender());
+        table.getColumnModel().getColumn(1).setCellRenderer(new ContactRender());
+        table.getColumnModel().getColumn(2).setCellRenderer(new TypeBadgeRender());
+        table.getColumnModel().getColumn(3).setCellRenderer(new CenterTextRender());
+        table.getColumnModel().getColumn(4).setCellRenderer(new PointRender());
+        table.getColumnModel().getColumn(5).setCellRenderer(new RankRender());
+        table.getColumnModel().getColumn(6).setCellRenderer(new ActRender());
+        table.getColumnModel().getColumn(6).setCellEditor(new ActEditor());
 
         JScrollPane sp = new JScrollPane(table);
         sp.setBorder(BorderFactory.createEmptyBorder());
@@ -184,9 +181,13 @@ public class Customerpanel extends JPanel {
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
         for (Customer c : list) {
             model.addRow(new Object[]{ 
-                c.getId(), c, c, c.getAddress(), c.getPartnerType(),
+                c, 
+                c, 
+                c.getPartnerType(),
                 c.getJoinDate() != null ? sdf.format(c.getJoinDate()) : "-",
-                c.getLoyaltyPoints(), c, "" 
+                c.getLoyaltyPoints(), 
+                c, 
+                "" 
             });
         }
     }
@@ -346,15 +347,40 @@ public class Customerpanel extends JPanel {
 
     class HdrRender extends DefaultTableCellRenderer {
         @Override public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
-            JLabel l = new JLabel(v != null ? v.toString() : "");
-            l.setFont(new Font("Helvetica Neue", Font.BOLD, 14));
-            l.setForeground(TXT2);
+            super.getTableCellRendererComponent(t, v, s, f, r, c);
+            setFont(new Font("Helvetica Neue", Font.BOLD, 14));
+            setForeground(TXT2);
+            setBackground(WHITE);
+            setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER));
+            
             if (c == 0) {
-                l.setHorizontalAlignment(SwingConstants.CENTER);
+                setHorizontalAlignment(SwingConstants.LEFT);
+                setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER),
+                    new EmptyBorder(0, 20, 0, 0)
+                ));
+            } else if (c == 1) {
+                setHorizontalAlignment(SwingConstants.LEFT);
+                setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER),
+                    new EmptyBorder(0, 15, 0, 0)
+                ));
             } else {
-                l.setBorder(new EmptyBorder(0, 15, 0, 0));
+                setHorizontalAlignment(SwingConstants.CENTER);
             }
-            return l;
+            return this;
+        }
+    }
+
+    class CenterTextRender extends DefaultTableCellRenderer {
+        @Override public Component getTableCellRendererComponent(JTable t, Object v, boolean sel, boolean f, int r, int c) {
+            super.getTableCellRendererComponent(t, v, sel, f, r, c);
+            setFont(new Font("Helvetica Neue", Font.PLAIN, 14));
+            setForeground(TXT);
+            setBackground(sel ? SEL_BG : WHITE);
+            setHorizontalAlignment(SwingConstants.CENTER);
+            setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER));
+            return this;
         }
     }
 
